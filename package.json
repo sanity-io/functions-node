@@ -1,0 +1,50 @@
+{
+  "name": "@sanity/functions",
+  "version": "0.0.1",
+  "description": "Helper methods and type definitions for Sanity Functions",
+  "keywords": [
+    "sanity",
+    "functions",
+    "serverless",
+    "types"
+  ],
+  "homepage": "https://github.com/sanity-io/functions-node#readme",
+  "bugs": {
+    "url": "https://github.com/sanity-io/functions-node/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/sanity-io/functions-node.git"
+  },
+  "license": "MIT",
+  "author": "Sanity.io <hello@sanity.io>",
+  "sideEffects": false,
+  "type": "module",
+  "exports": {
+    ".": {
+      "source": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "main": "dist/index.js",
+  "files": [
+    "dist",
+    "src"
+  ],
+  "scripts": {
+    "build": "mkdist -d --target node20",
+    "lint": "tsc --noEmit",
+    "test": "vitest --typecheck --reporter=verbose"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "mkdist": "^2.3.0",
+    "prettier": "^3.5.3",
+    "prettier-plugin-packagejson": "^2.5.10",
+    "typescript": "^5.8.3",
+    "vitest": "3.1.2"
+  }
+}
