@@ -1,0 +1,27 @@
+{
+  "name": "@sanity/functions",
+  "version": "0.0.1",
+  "description": "Helper methods and type definitions for Sanity Functions",
+  "keywords": [
+    "sanity",
+    "functions",
+    "serverless",
+    "types"
+  ],
+  "homepage": "https://github.com/sanity-io/functions-node#readme",
+  "bugs": {
+    "url": "https://github.com/sanity-io/functions-node/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/sanity-io/functions-node.git"
+  },
+  "license": "MIT",
+  "author": "Sanity.io <hello@sanity.io>",
+  "sideEffects": false,
+  "type": "module",
+  "files": [
+    "dist",
+    "src"
+  ]
+}
