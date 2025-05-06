@@ -20,7 +20,7 @@ jobs:
       contents: read
       # Required to put a comment into the pull-request
       pull-requests: write
-    name: Build, lint and benchmark
+    name: Build and lint
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
