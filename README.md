@@ -24,7 +24,7 @@ export const handler = documentEventHandler(async ({context, event}) => {
   })
 
   // Access the event data
-  const data = event.doc
+  const data = event.data
 
   // Your function implementation
   console.log('Document updated:', data)
@@ -33,7 +33,7 @@ export const handler = documentEventHandler(async ({context, event}) => {
 
 ### Typescript: Passing type for data
 
-By default, the `event.doc` property is untyped (`any`). If you know what the shape of the data that will be delivered is, you can specify it as a generic to the function:
+By default, the `event.data` property is untyped (`any`). If you know what the shape of the data that will be delivered is, you can specify it as a generic to the function:
 
 ```ts
 interface NotificationData {
@@ -42,8 +42,8 @@ interface NotificationData {
 }
 
 export const handler = documentEventHandler<NotificationData>(async ({event}) => {
-  console.log(event.doc.text) // Typed as `string`
-  console.log(event.doc.notSet) // Will yield type error
+  console.log(event.data.text) // Typed as `string`
+  console.log(event.data.notSet) // Will yield type error
 })
 ```
 
@@ -59,7 +59,7 @@ export const handler: DocumentEventHandler = async ({context, event}) => {
 
 // …you can also define the data type:
 export const handler: DocumentEventHandler<{text: string}> = async ({event}) => {
-  console.log(event.doc.text)
+  console.log(event.data.text)
 }
 ```
 
@@ -68,13 +68,13 @@ export const handler: DocumentEventHandler<{text: string}> = async ({event}) => 
 ```js
 /** @type {import('@sanity/functions').DocumentEventHandler} */
 export const handler = async ({context, event}) => {
-  console.log(event.doc.text)
+  console.log(event.data.text)
 }
 
 // …you can also define the data type:
 /** @type {import('@sanity/functions').DocumentEventHandler<{text: string}>} */
 export const handler = async ({event}) => {
-  console.log(event.doc.text)
+  console.log(event.data.text)
 }
 ```
 
