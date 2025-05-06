@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.2](https://github.com/sanity-io/functions-node/compare/v1.0.1...v1.0.2) (2025-05-06)
+
+
+### Bug Fixes
+
+* use public publish config ([4881995](https://github.com/sanity-io/functions-node/commit/48819951c2ac8ecec76e33f5733576f50837d50a))
+
 ## [1.0.1](https://github.com/sanity-io/functions-node/compare/v1.0.0...v1.0.1) (2025-05-06)
 
 
