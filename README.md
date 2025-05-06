@@ -98,6 +98,10 @@ To run type checking:
 npm run lint
 ```
 
+## Release automation
+
+This repository uses conventional commits and release-please. Any relevant changes to `main` will create a pull request for a new release. Approve it and merge it to trigger the actual release.
+
 ## License
 
 MIT © [Sanity.io](https://sanity.io)
