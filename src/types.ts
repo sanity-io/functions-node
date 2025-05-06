@@ -39,10 +39,9 @@ export interface DocumentEvent<IData = any> {
    * GROQ-projection to the changed document. If no projection is configured, this is
    * the document itself.
    *
-   * @todo Rename to `data` and remove/deprecate `doc`
    * @beta
    */
-  doc: IData
+  data: IData
 }
 
 /**

@@ -12,7 +12,7 @@ describe('documentEventHandler', () => {
   }
 
   const event: DocumentEvent = {
-    doc: {_id: 'docId', _type: 'docType'},
+    data: {_id: 'docId', _type: 'docType'},
   }
 
   test('has correct type signature', () => {
@@ -30,7 +30,7 @@ describe('documentEventHandler', () => {
       expectTypeOf(envelope.event).toEqualTypeOf<DocumentEvent>()
       expect(envelope.context).toEqual(context)
       expect(envelope.event).toEqual(event)
-      expectTypeOf(envelope.event.doc).toBeAny()
+      expectTypeOf(envelope.event.data).toBeAny()
     })
 
     handler({context, event})
@@ -38,17 +38,17 @@ describe('documentEventHandler', () => {
 
   test('can pass data type as generic', () => {
     const handler = documentEventHandler<{foo: string}>((envelope) => {
-      expectTypeOf(envelope.event.doc).toEqualTypeOf<{foo: string}>()
-      expect(envelope.event.doc.foo).toBe('bar')
+      expectTypeOf(envelope.event.data).toEqualTypeOf<{foo: string}>()
+      expect(envelope.event.data.foo).toBe('bar')
     })
 
-    handler({context, event: {doc: {foo: 'bar'}}})
+    handler({context, event: {data: {foo: 'bar'}}})
 
     const unknownHandler = documentEventHandler<unknown>((envelope) => {
-      expectTypeOf(envelope.event.doc).toEqualTypeOf<unknown>()
+      expectTypeOf(envelope.event.data).toEqualTypeOf<unknown>()
 
       // @ts-expect-error accessing `foo` on unknown should fail
-      expect(envelope.event.doc.foo).toBe('bar')
+      expect(envelope.event.data.foo).toBe('bar')
     })
 
     unknownHandler({context, event})
