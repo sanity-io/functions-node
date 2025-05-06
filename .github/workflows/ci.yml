@@ -67,22 +67,13 @@ jobs:
       matrix:
         # Run the testing suite on each major OS with the latest LTS release of Node.js
         os: [macos-latest, ubuntu-latest, windows-latest]
-        node: [lts/*]
-        # It makes sense to also test the oldest, and latest, versions of Node.js, on ubuntu-only since it's the fastest CI runner
-        include:
-          - os: ubuntu-latest
-            # Also test the previous LTS release
-            node: lts/-1
-        # The `build` job already runs the testing suite in ubuntu and lts/*
-        exclude:
-          - os: ubuntu-latest
-            node: lts/*
+        node-version: ['20.x', '22.x', '24.x']
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           cache: npm
-          node-version: ${{ matrix.node }}
+          node-version: ${{ matrix.node-version }}
       - run: npm install
       - run: npx ls-engines
       - run: npm test
