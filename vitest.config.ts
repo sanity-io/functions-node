@@ -5,5 +5,10 @@ export default defineConfig({
     globals: false,
     include: ['test/**/*.test.ts'],
     environment: 'node',
+
+    coverage: {
+      reporter: ['text', 'json-summary', 'json'],
+      reportOnFailure: true,
+    },
   },
 })
