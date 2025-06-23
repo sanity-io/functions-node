@@ -5,6 +5,12 @@
  */
 export interface FunctionContext {
   /**
+   * `local` is set to `true` when testing your function locally.
+   * i.e. `sanity function test func-name`
+   * Otherwise, the property is not set.
+   */
+  local?: boolean
+  /**
    * Options that can be passed to a `@sanity/client` constructor to configure it
    * against the project and dataset which triggered the event. Note that you should
    * always specify an explicit `apiVersion` in YYYY-MM-DD format (e.g. `2025-05-01`).
