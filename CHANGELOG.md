@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.3](https://github.com/sanity-io/functions-node/compare/v1.0.2...v1.0.3) (2025-06-23)
+
+
+### Bug Fixes
+
+* RUN-562 Add local boolean to function context ([#7](https://github.com/sanity-io/functions-node/issues/7)) ([5b7e456](https://github.com/sanity-io/functions-node/commit/5b7e456d61fb4c981beed3d85b74f8b2d5e91ab5))
+
 ## [1.0.2](https://github.com/sanity-io/functions-node/compare/v1.0.1...v1.0.2) (2025-05-06)
 
 
