@@ -4,6 +4,14 @@
  * @beta
  */
 export interface FunctionContext {
+  /** The resource type of the event source; resource type that invoked the function. */
+  eventResourceType: string
+  /** The resource ID of the event source; resource ID that invoked the function. */
+  eventResourceId: string
+  /** The resource type of the function container; resource type that houses the function. */
+  functionResourceType: string
+  /** The resource ID of the function container; resource ID that houses the function. */
+  functionResourceId: string
   /**
    * `local` is set to `true` when testing your function locally.
    * i.e. `sanity function test func-name`
