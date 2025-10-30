@@ -8,6 +8,10 @@ import {
 
 describe('documentEventHandler', () => {
   const context: FunctionContext = {
+    eventResourceId: 'abc123.xyz789',
+    eventResourceType: 'dataset',
+    functionResourceId: 'abc123',
+    functionResourceType: 'project',
     clientOptions: {projectId: 'abc123', dataset: 'xyz789', token: 'sk_some-token'},
   }
 
