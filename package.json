@@ -38,7 +38,7 @@
     "build": "rimraf dist && tsc",
     "coverage": "vitest --coverage",
     "lint": "tsc --noEmit --project tsconfig.test.json",
-    "prepublishOnly": "npm run build",
+    "prepare": "npm run build",
     "test": "vitest run --typecheck --reporter=verbose",
     "test:watch": "vitest --typecheck --reporter=verbose"
   },
