@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.0](https://github.com/sanity-io/functions-node/compare/v1.0.3...v1.1.0) (2025-11-03)
+
+
+### Features
+
+* adding new event and function resource type and IDs to `FunctionContext` ([#9](https://github.com/sanity-io/functions-node/issues/9)) ([6225bec](https://github.com/sanity-io/functions-node/commit/6225bec5463e29e9aa036e696a383b48794fdc5e))
+
 ## [1.0.3](https://github.com/sanity-io/functions-node/compare/v1.0.2...v1.0.3) (2025-06-23)
 
 
