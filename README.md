@@ -13,10 +13,10 @@ npm install @sanity/functions
 ### Basic
 
 ```ts
-import {documentEventHandler} from '@sanity/functions'
+import {defineDocumentEventHandler} from '@sanity/functions'
 import {createClient} from '@sanity/client'
 
-export const handler = documentEventHandler(async ({context, event}) => {
+export const handler = defineDocumentEventHandler(async ({context, event}) => {
   // Create a Sanity client using the context options
   const client = createClient({
     apiVersion: '2025-05-01',
@@ -41,7 +41,7 @@ interface NotificationData {
   text: string
 }
 
-export const handler = documentEventHandler<NotificationData>(async ({event}) => {
+export const handler = defineDocumentEventHandler<NotificationData>(async ({event}) => {
   console.log(event.data.text) // Typed as `string`
   console.log(event.data.notSet) // Will yield type error
 })
@@ -50,15 +50,15 @@ export const handler = documentEventHandler<NotificationData>(async ({event}) =>
 ### Type only (TypeScript)
 
 ```ts
-import {type DocumentEventHandler} from '@sanity/functions'
+import {type defineDocumentEventHandler} from '@sanity/functions'
 import {createClient} from '@sanity/client'
 
-export const handler: DocumentEventHandler = async ({context, event}) => {
+export const handler: defineDocumentEventHandler = async ({context, event}) => {
   // …
 }
 
 // …you can also define the data type:
-export const handler: DocumentEventHandler<{text: string}> = async ({event}) => {
+export const handler: defineDocumentEventHandler<{text: string}> = async ({event}) => {
   console.log(event.data.text)
 }
 ```
@@ -66,13 +66,13 @@ export const handler: DocumentEventHandler<{text: string}> = async ({event}) => 
 ### Type only (JavaScript)
 
 ```js
-/** @type {import('@sanity/functions').DocumentEventHandler} */
+/** @type {import('@sanity/functions').defineDocumentEventHandler} */
 export const handler = async ({context, event}) => {
   console.log(event.data.text)
 }
 
 // …you can also define the data type:
-/** @type {import('@sanity/functions').DocumentEventHandler<{text: string}>} */
+/** @type {import('@sanity/functions').defineDocumentEventHandler<{text: string}>} */
 export const handler = async ({event}) => {
   console.log(event.data.text)
 }
