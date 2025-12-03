@@ -35,8 +35,8 @@ export interface FunctionContext {
    */
   clientOptions: {
     apiHost?: string
-    dataset: string
-    projectId: string
+    dataset?: string
+    projectId?: string
     token: string
   }
 }
@@ -66,4 +66,13 @@ export interface DocumentEvent<IData = any> {
 export type DocumentEventHandler<IData = any> = (envelope: {
   context: FunctionContext
   event: DocumentEvent<IData>
+}) => void | Promise<void>
+
+/**
+ * A function handler for a schedule event.
+ *
+ * @beta
+ */
+export type ScheduleEventHandler = (envelope: {
+  context: FunctionContext
 }) => void | Promise<void>
