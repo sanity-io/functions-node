@@ -62,14 +62,6 @@ describe('documentEventHandler', () => {
 })
 
 describe('scheduleEventHandler', () => {
-  const context: FunctionContext = {
-    eventResourceId: 'abc123.xyz789',
-    eventResourceType: 'dataset',
-    functionResourceId: 'abc123',
-    functionResourceType: 'project',
-    clientOptions: {token: 'sk_some-token'},
-  }
-
   test('has correct type signature', () => {
     expectTypeOf(scheduleEventHandler).toBeFunction()
     expectTypeOf(scheduleEventHandler).parameter(0).toExtend<ScheduleEventHandler>()
@@ -79,12 +71,17 @@ describe('scheduleEventHandler', () => {
     assertType(scheduleEventHandler('foo'))
   })
 
-  test('handler envelope has correct types', () => {
-    const handler = scheduleEventHandler((envelope) => {
-      expectTypeOf(envelope.context).toEqualTypeOf<FunctionContext>()
-      expect(envelope.context).toEqual(context)
-    })
+  test('runs a zero-arg handler', async () => {
+    const handler: ScheduleEventHandler = () => {
+      return Promise.resolve()
+    }
 
-    handler({context})
+    await expect(handler()).resolves.toBeUndefined()
+  })
+
+  test('requires zero parameters', () => {
+    const handler: ScheduleEventHandler = () => {}
+
+    expectTypeOf(handler).parameters.toEqualTypeOf<[]>()
   })
 })
