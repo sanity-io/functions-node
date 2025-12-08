@@ -5,6 +5,7 @@ import {
   type DocumentEventHandler,
   type ScheduleEventHandler,
   type FunctionContext,
+  type ScheduleFunctionContext,
   type DocumentEvent,
 } from '../src'
 
@@ -62,6 +63,10 @@ describe('documentEventHandler', () => {
 })
 
 describe('scheduleEventHandler', () => {
+  const context: ScheduleFunctionContext = {
+    local: true,
+  }
+
   test('has correct type signature', () => {
     expectTypeOf(scheduleEventHandler).toBeFunction()
     expectTypeOf(scheduleEventHandler).parameter(0).toExtend<ScheduleEventHandler>()
@@ -71,17 +76,20 @@ describe('scheduleEventHandler', () => {
     assertType(scheduleEventHandler('foo'))
   })
 
-  test('runs a zero-arg handler', async () => {
+  test('handler envelope has correct types', () => {
+    const handler = scheduleEventHandler((envelope) => {
+      expectTypeOf(envelope.context).toEqualTypeOf<ScheduleFunctionContext>()
+      expect(envelope.context).toEqual(context)
+    })
+
+    handler({context})
+  })
+
+  test('runs a handler', async () => {
     const handler: ScheduleEventHandler = () => {
       return Promise.resolve()
     }
 
-    await expect(handler()).resolves.toBeUndefined()
-  })
-
-  test('requires zero parameters', () => {
-    const handler: ScheduleEventHandler = () => {}
-
-    expectTypeOf(handler).parameters.toEqualTypeOf<[]>()
+    await expect(handler({context})).resolves.toBeUndefined()
   })
 })

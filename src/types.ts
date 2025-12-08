@@ -42,6 +42,21 @@ export interface FunctionContext {
 }
 
 /**
+ * The context object passed to the schedule function handler.
+ *
+ * @beta
+ */
+export interface ScheduleFunctionContext {
+  /**
+   * `local` is set to `true` when testing your function locally.
+   * i.e. `sanity function test func-name`
+   * Otherwise, the property is not set.
+   */
+  local?: boolean
+}
+
+
+/**
  * The event object received by the function handler in the case of a document event,
  * such as a publish, unpublish, delete or mutation event and similar.
  *
@@ -73,4 +88,6 @@ export type DocumentEventHandler<IData = any> = (envelope: {
  *
  * @beta
  */
-export type ScheduleEventHandler = () => void | Promise<void>
+export type ScheduleEventHandler = (envelope: {
+  context: ScheduleFunctionContext
+}) => void | Promise<void>
