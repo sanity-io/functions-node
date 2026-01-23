@@ -63,7 +63,4 @@ export interface DocumentEvent<IData = any> {
  *
  * @beta
  */
-export type DocumentEventHandler<IData = any> = (envelope: {
-  context: FunctionContext
-  event: DocumentEvent<IData>
-}) => void | Promise<void>
+export type DocumentEventHandler<IData = any> = (envelope: {context: FunctionContext; event: DocumentEvent<IData>}) => void | Promise<void>

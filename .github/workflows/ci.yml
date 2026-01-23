@@ -58,20 +58,35 @@ jobs:
       - uses: davelosert/vitest-coverage-report-action@7bf7d3c1b17a0e27c7e0d14190fb39168584bed2 # v2
         if: always()
 
+  lint:
+    name: Lint and typecheck
+    needs: [build]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          cache: npm
+          node-version: lts/*
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run typecheck
+
   test:
-    needs: [build, coverage]
+    name: Test
+    needs: [build, coverage, lint]
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
         # Run the testing suite on each major OS with the latest LTS release of Node.js
         os: [macos-latest, ubuntu-latest, windows-latest]
-        node-version: ['20.x', '22.x', '24.x']
+        node-version: ["20.x", "22.x", "24.x"]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           cache: npm
           node-version: ${{ matrix.node-version }}
-      - run: npm install
+      - run: npm ci
       - run: npm test

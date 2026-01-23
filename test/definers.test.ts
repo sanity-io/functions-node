@@ -1,5 +1,5 @@
 import {describe, expect, test} from 'vitest'
-import {documentEventHandler, type DocumentEventHandler} from '../src/index.js'
+import {type DocumentEventHandler, documentEventHandler} from '../src/index.js'
 
 describe('documentEventHandler', () => {
   test('passes through handler function verbatim', () => {

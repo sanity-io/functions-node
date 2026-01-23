@@ -1,10 +1,5 @@
 import {assertType, describe, expect, expectTypeOf, test} from 'vitest'
-import {
-  documentEventHandler,
-  type DocumentEventHandler,
-  type FunctionContext,
-  type DocumentEvent,
-} from '../src'
+import {type DocumentEvent, type DocumentEventHandler, documentEventHandler, type FunctionContext} from '../src'
 
 describe('documentEventHandler', () => {
   const context: FunctionContext = {
