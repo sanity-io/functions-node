@@ -53,6 +53,27 @@ export interface ScheduleFunctionContext {
    * Otherwise, the property is not set.
    */
   local?: boolean
+  /**
+   * Options that can be passed to a `@sanity/client` constructor to configure it
+   * against the project and dataset which triggered the event. Note that you should
+   * always specify an explicit `apiVersion` in YYYY-MM-DD format (e.g. `2025-05-01`).
+   *
+   * @example
+   * Constructing a client with the options from the context:
+   * ```ts
+   * const client = createClient({
+   *   apiVersion: '2025-05-01',
+   *   ...context.clientOptions,
+   * })
+   * ```
+   * @beta
+   */
+  clientOptions?: {
+    apiHost?: string
+    dataset?: string
+    projectId?: string
+    token?: string
+  }
 }
 
 
