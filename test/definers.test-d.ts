@@ -1,12 +1,12 @@
 import {assertType, describe, expect, expectTypeOf, test} from 'vitest'
 import {
-  documentEventHandler,
-  scheduleEventHandler,
-  type DocumentEventHandler,
-  type ScheduleEventHandler,
-  type FunctionContext,
-  type ScheduleFunctionContext,
   type DocumentEvent,
+  type DocumentEventHandler,
+  documentEventHandler,
+  type FunctionContext,
+  type ScheduleEventHandler,
+  type ScheduleFunctionContext,
+  scheduleEventHandler,
 } from '../src'
 
 describe('documentEventHandler', () => {

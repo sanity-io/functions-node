@@ -76,7 +76,6 @@ export interface ScheduleFunctionContext {
   }
 }
 
-
 /**
  * The event object received by the function handler in the case of a document event,
  * such as a publish, unpublish, delete or mutation event and similar.
@@ -99,16 +98,11 @@ export interface DocumentEvent<IData = any> {
  *
  * @beta
  */
-export type DocumentEventHandler<IData = any> = (envelope: {
-  context: FunctionContext
-  event: DocumentEvent<IData>
-}) => void | Promise<void>
+export type DocumentEventHandler<IData = any> = (envelope: {context: FunctionContext; event: DocumentEvent<IData>}) => void | Promise<void>
 
 /**
  * A function handler for a schedule event.
  *
  * @beta
  */
-export type ScheduleEventHandler = (envelope: {
-  context: ScheduleFunctionContext
-}) => void | Promise<void>
+export type ScheduleEventHandler = (envelope: {context: ScheduleFunctionContext}) => void | Promise<void>
