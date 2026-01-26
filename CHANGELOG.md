@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.0](https://github.com/sanity-io/functions-node/compare/v1.1.0...v1.2.0) (2026-01-26)
+
+
+### Features
+
+* add definer for scheduled functions ([#12](https://github.com/sanity-io/functions-node/issues/12)) ([8af1f6d](https://github.com/sanity-io/functions-node/commit/8af1f6dd2d9c3f00908e6dd6104b581d2ca5412c))
+
 ## [1.1.0](https://github.com/sanity-io/functions-node/compare/v1.0.3...v1.1.0) (2025-11-03)
 
 
