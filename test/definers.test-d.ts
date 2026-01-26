@@ -1,8 +1,11 @@
 import {assertType, describe, expect, expectTypeOf, test} from 'vitest'
 import {
   documentEventHandler,
+  scheduleEventHandler,
   type DocumentEventHandler,
+  type ScheduleEventHandler,
   type FunctionContext,
+  type ScheduleFunctionContext,
   type DocumentEvent,
 } from '../src'
 
@@ -56,5 +59,37 @@ describe('documentEventHandler', () => {
     })
 
     unknownHandler({context, event})
+  })
+})
+
+describe('scheduleEventHandler', () => {
+  const context: ScheduleFunctionContext = {
+    local: true,
+  }
+
+  test('has correct type signature', () => {
+    expectTypeOf(scheduleEventHandler).toBeFunction()
+    expectTypeOf(scheduleEventHandler).parameter(0).toExtend<ScheduleEventHandler>()
+    expectTypeOf(scheduleEventHandler).returns.toExtend<ScheduleEventHandler>()
+
+    // @ts-expect-error should be a function
+    assertType(scheduleEventHandler('foo'))
+  })
+
+  test('handler envelope has correct types', () => {
+    const handler = scheduleEventHandler((envelope) => {
+      expectTypeOf(envelope.context).toEqualTypeOf<ScheduleFunctionContext>()
+      expect(envelope.context).toEqual(context)
+    })
+
+    handler({context})
+  })
+
+  test('runs a handler', async () => {
+    const handler: ScheduleEventHandler = () => {
+      return Promise.resolve()
+    }
+
+    await expect(handler({context})).resolves.toBeUndefined()
   })
 })

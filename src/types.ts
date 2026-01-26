@@ -42,6 +42,42 @@ export interface FunctionContext {
 }
 
 /**
+ * The context object passed to the schedule function handler.
+ *
+ * @beta
+ */
+export interface ScheduleFunctionContext {
+  /**
+   * `local` is set to `true` when testing your function locally.
+   * i.e. `sanity function test func-name`
+   * Otherwise, the property is not set.
+   */
+  local?: boolean
+  /**
+   * Options that can be passed to a `@sanity/client` constructor to configure it
+   * against the project and dataset which triggered the event. Note that you should
+   * always specify an explicit `apiVersion` in YYYY-MM-DD format (e.g. `2025-05-01`).
+   *
+   * @example
+   * Constructing a client with the options from the context:
+   * ```ts
+   * const client = createClient({
+   *   apiVersion: '2025-05-01',
+   *   ...context.clientOptions,
+   * })
+   * ```
+   * @beta
+   */
+  clientOptions?: {
+    apiHost?: string
+    dataset?: string
+    projectId?: string
+    token?: string
+  }
+}
+
+
+/**
  * The event object received by the function handler in the case of a document event,
  * such as a publish, unpublish, delete or mutation event and similar.
  *
@@ -66,4 +102,13 @@ export interface DocumentEvent<IData = any> {
 export type DocumentEventHandler<IData = any> = (envelope: {
   context: FunctionContext
   event: DocumentEvent<IData>
+}) => void | Promise<void>
+
+/**
+ * A function handler for a schedule event.
+ *
+ * @beta
+ */
+export type ScheduleEventHandler = (envelope: {
+  context: ScheduleFunctionContext
 }) => void | Promise<void>
