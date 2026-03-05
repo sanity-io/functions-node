@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.1](https://github.com/sanity-io/functions-node/compare/v1.2.0...v1.2.1) (2026-03-05)
+
+
+### Bug Fixes
+
+* rename scheduleEventHandler to scheduledEventHandler ([#16](https://github.com/sanity-io/functions-node/issues/16)) ([c4fbb32](https://github.com/sanity-io/functions-node/commit/c4fbb3210c3be47d1dabbbe5ff03ad190cf6b9bb))
+
 ## [1.2.0](https://github.com/sanity-io/functions-node/compare/v1.1.0...v1.2.0) (2026-01-26)
 
 
