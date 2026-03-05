@@ -46,7 +46,7 @@ export interface FunctionContext {
  *
  * @beta
  */
-export interface ScheduleFunctionContext {
+export interface ScheduledFunctionContext {
   /**
    * `local` is set to `true` when testing your function locally.
    * i.e. `sanity function test func-name`
@@ -105,4 +105,4 @@ export type DocumentEventHandler<IData = any> = (envelope: {context: FunctionCon
  *
  * @beta
  */
-export type ScheduleEventHandler = (envelope: {context: ScheduleFunctionContext}) => void | Promise<void>
+export type ScheduledEventHandler = (envelope: {context: ScheduledFunctionContext}) => void | Promise<void>

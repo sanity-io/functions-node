@@ -4,9 +4,9 @@ import {
   type DocumentEventHandler,
   documentEventHandler,
   type FunctionContext,
-  type ScheduleEventHandler,
-  type ScheduleFunctionContext,
-  scheduleEventHandler,
+  type ScheduledEventHandler,
+  type ScheduledFunctionContext,
+  scheduledEventHandler,
 } from '../src'
 
 describe('documentEventHandler', () => {
@@ -62,23 +62,23 @@ describe('documentEventHandler', () => {
   })
 })
 
-describe('scheduleEventHandler', () => {
-  const context: ScheduleFunctionContext = {
+describe('scheduledEventHandler', () => {
+  const context: ScheduledFunctionContext = {
     local: true,
   }
 
   test('has correct type signature', () => {
-    expectTypeOf(scheduleEventHandler).toBeFunction()
-    expectTypeOf(scheduleEventHandler).parameter(0).toExtend<ScheduleEventHandler>()
-    expectTypeOf(scheduleEventHandler).returns.toExtend<ScheduleEventHandler>()
+    expectTypeOf(scheduledEventHandler).toBeFunction()
+    expectTypeOf(scheduledEventHandler).parameter(0).toExtend<ScheduledEventHandler>()
+    expectTypeOf(scheduledEventHandler).returns.toExtend<ScheduledEventHandler>()
 
     // @ts-expect-error should be a function
-    assertType(scheduleEventHandler('foo'))
+    assertType(scheduledEventHandler('foo'))
   })
 
   test('handler envelope has correct types', () => {
-    const handler = scheduleEventHandler((envelope) => {
-      expectTypeOf(envelope.context).toEqualTypeOf<ScheduleFunctionContext>()
+    const handler = scheduledEventHandler((envelope) => {
+      expectTypeOf(envelope.context).toEqualTypeOf<ScheduledFunctionContext>()
       expect(envelope.context).toEqual(context)
     })
 
@@ -86,7 +86,7 @@ describe('scheduleEventHandler', () => {
   })
 
   test('runs a handler', async () => {
-    const handler: ScheduleEventHandler = () => {
+    const handler: ScheduledEventHandler = () => {
       return Promise.resolve()
     }
 

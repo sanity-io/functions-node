@@ -1,4 +1,4 @@
-import type {DocumentEventHandler, ScheduleEventHandler} from './types.js'
+import type {DocumentEventHandler, ScheduledEventHandler} from './types.js'
 
 /**
  * Defines a "document event" function handler.
@@ -20,7 +20,7 @@ export function documentEventHandler<IData = any>(handler: DocumentEventHandler<
  * @param handler - The event handler function to use.
  * @returns The handler function, unmodified.
  */
-export function scheduleEventHandler(handler: ScheduleEventHandler): ScheduleEventHandler {
+export function scheduledEventHandler(handler: ScheduledEventHandler): ScheduledEventHandler {
   if (typeof handler !== 'function') throw new TypeError('`handler` must be a function')
   return handler
 }
