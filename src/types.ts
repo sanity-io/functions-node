@@ -94,6 +94,23 @@ export interface DocumentEvent<IData = any> {
 }
 
 /**
+ * The event object received by the function handler in the case of a sync-tag-invalidate event.
+ *
+ * @beta
+ */
+export interface SyncTagInvalidateEvent {
+  /**
+   * The sync tags for use with cache invalidation and notifying the callback endpoint once tags are invalidated.
+   *
+   * @beta
+   */
+  data: {
+    /** Array of sync tags to be invalidated. */
+    syncTags: string[]
+  }
+}
+
+/**
  * A function handler for a document event.
  *
  * @beta
@@ -106,3 +123,20 @@ export type DocumentEventHandler<IData = any> = (envelope: {context: FunctionCon
  * @beta
  */
 export type ScheduledEventHandler = (envelope: {context: ScheduledFunctionContext}) => void | Promise<void>
+
+/**
+ * A callback function to invoke once a sync-tag-invalidate event has been processed. Signals to Sanity that sync tag invalidation has completed.
+ *
+ * @beta
+ */
+export type SyncTagInvalidateCallback = (syncTags: string[]) => Promise<Response>
+/**
+ * A function handler for a sync-tag-invalidate event.
+ *
+ * @beta
+ */
+export type SyncTagInvalidateEventHandler = (envelope: {
+  context: FunctionContext & {clientOptions: ScheduledFunctionContext['clientOptions']} // the API token may be false since users must provide it
+  event: SyncTagInvalidateEvent
+  callback: SyncTagInvalidateCallback
+}) => void | Promise<void>
