@@ -3,9 +3,7 @@
   "compilerOptions": {
     "outDir": "./dist",
     "target": "ES2023",
-    "lib": [
-      "ES2023"
-    ],
+    "lib": ["ES2023"],
     "module": "ES2022",
     "moduleResolution": "bundler",
     "skipLibCheck": true,
@@ -39,11 +37,6 @@
     "forceConsistentCasingInFileNames": true,
     "erasableSyntaxOnly": true
   },
-  "exclude": [
-    "node_modules",
-    "dist"
-  ],
-  "include": [
-    "src/**/*.ts"
-  ]
+  "exclude": ["node_modules", "dist"],
+  "include": ["src/**/*.ts"]
 }
