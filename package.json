@@ -35,7 +35,7 @@
     "src"
   ],
   "scripts": {
-    "build": "rimraf dist && tsc",
+    "build": "rimraf dist .tsbuildinfo && tsc",
     "lint": "biome check .",
     "lint:write": "biome check --write .",
     "coverage": "vitest --coverage",
