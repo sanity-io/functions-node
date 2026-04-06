@@ -130,13 +130,35 @@ export type ScheduledEventHandler = (envelope: {context: ScheduledFunctionContex
  * @beta
  */
 export type SyncTagInvalidateCallback = (syncTags: string[]) => Promise<Response>
+
+/**
+ * The context object passed to the sync tag invalidate event handler.
+ *
+ * @beta
+ */
+export interface SyncTagInvalidateContext extends Omit<FunctionContext, 'clientOptions'> {
+  /**
+   * A short-lived token that should be used to notify Sanity of sync tag invalidation routine completion. Recommended to use the `callback` helper argument provided to the sync tag invalidate event handler instead of this token directly.
+   */
+  callbackToken: string
+  clientOptions: {
+    apiHost: string
+    dataset: string
+    projectId: string
+    /**
+     * An API token for use with the Sanity HTTP API. Note that it may be undefined if the user does not explicitly assign a Robot Token to their function definition.
+     * @see https://www.sanity.io/docs/blueprints/blueprints-robot-tokens#k8a2a6a24a5c0
+     */
+    token?: string
+  }
+}
 /**
  * A function handler for a sync-tag-invalidate event.
  *
  * @beta
  */
 export type SyncTagInvalidateEventHandler = (envelope: {
-  context: FunctionContext & {clientOptions: ScheduledFunctionContext['clientOptions']} // the API token may be false since users must provide it
+  context: SyncTagInvalidateContext
   event: SyncTagInvalidateEvent
   callback: SyncTagInvalidateCallback
 }) => void | Promise<void>
