@@ -6,7 +6,12 @@ import {
   type FunctionContext,
   type ScheduledEventHandler,
   type ScheduledFunctionContext,
+  type SyncTagInvalidateCallback,
+  type SyncTagInvalidateContext,
+  type SyncTagInvalidateEvent,
+  type SyncTagInvalidateEventHandler,
   scheduledEventHandler,
+  syncTagInvalidateEventHandler,
 } from '../src'
 
 describe('documentEventHandler', () => {
@@ -91,5 +96,44 @@ describe('scheduledEventHandler', () => {
     }
 
     await expect(handler({context})).resolves.toBeUndefined()
+  })
+})
+
+describe('syncTagInvalidateEventHandler', () => {
+  const context: SyncTagInvalidateContext = {
+    callbackToken: 'supersecret',
+    eventResourceId: 'abc123.xyz789',
+    eventResourceType: 'dataset',
+    functionResourceId: 'abc123',
+    functionResourceType: 'project',
+    clientOptions: {apiHost: 'api.sanity.io', projectId: 'abc123', dataset: 'xyz789'},
+  }
+
+  const event: SyncTagInvalidateEvent = {
+    data: {syncTags: ['abc:123', 'def:456']},
+  }
+
+  const done: SyncTagInvalidateCallback = async (_syncTags) => new Response()
+
+  test('has correct type signature', () => {
+    expectTypeOf(syncTagInvalidateEventHandler).toBeFunction()
+    expectTypeOf(syncTagInvalidateEventHandler).parameter(0).toExtend<SyncTagInvalidateEventHandler>()
+    expectTypeOf(syncTagInvalidateEventHandler).returns.toExtend<SyncTagInvalidateEventHandler>()
+
+    // @ts-expect-error should be a function
+    assertType(syncTagInvalidateEventHandler('foo'))
+  })
+
+  test('handler envelope has correct types', () => {
+    const handler = syncTagInvalidateEventHandler((envelope) => {
+      expectTypeOf(envelope.context).toEqualTypeOf<SyncTagInvalidateContext>()
+      expectTypeOf(envelope.event).toEqualTypeOf<SyncTagInvalidateEvent>()
+      expectTypeOf(envelope.done).toEqualTypeOf<SyncTagInvalidateCallback>()
+      expect(envelope.context).toEqual(context)
+      expect(envelope.event).toEqual(event)
+      expectTypeOf(envelope.event.data.syncTags).toBeArray()
+    })
+
+    handler({context, done, event})
   })
 })

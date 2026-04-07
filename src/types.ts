@@ -94,6 +94,23 @@ export interface DocumentEvent<IData = any> {
 }
 
 /**
+ * The event object received by the function handler in the case of a sync-tag-invalidate event.
+ *
+ * @beta
+ */
+export interface SyncTagInvalidateEvent {
+  /**
+   * The sync tags for use with cache invalidation and notifying the callback endpoint once tags are invalidated.
+   *
+   * @beta
+   */
+  data: {
+    /** Array of sync tags to be invalidated. */
+    syncTags: string[]
+  }
+}
+
+/**
  * A function handler for a document event.
  *
  * @beta
@@ -106,3 +123,42 @@ export type DocumentEventHandler<IData = any> = (envelope: {context: FunctionCon
  * @beta
  */
 export type ScheduledEventHandler = (envelope: {context: ScheduledFunctionContext}) => void | Promise<void>
+
+/**
+ * A callback function to invoke once a sync-tag-invalidate event has been processed. Signals to Sanity that sync tag invalidation has completed.
+ *
+ * @beta
+ */
+export type SyncTagInvalidateCallback = (syncTags: string[]) => Promise<Response>
+
+/**
+ * The context object passed to the sync tag invalidate event handler.
+ *
+ * @beta
+ */
+export interface SyncTagInvalidateContext extends Omit<FunctionContext, 'clientOptions'> {
+  /**
+   * A short-lived token that should be used to notify Sanity of sync tag invalidation routine completion. Recommended to use the `done` helper argument provided to the sync tag invalidate event handler instead of this token directly.
+   */
+  callbackToken: string
+  clientOptions: {
+    apiHost: string
+    dataset: string
+    projectId: string
+    /**
+     * An API token for use with the Sanity HTTP API. Note that it may be undefined if the user does not explicitly assign a Robot Token to their function definition.
+     * @see https://www.sanity.io/docs/blueprints/blueprints-robot-tokens#k8a2a6a24a5c0
+     */
+    token?: string
+  }
+}
+/**
+ * A function handler for a sync-tag-invalidate event.
+ *
+ * @beta
+ */
+export type SyncTagInvalidateEventHandler = (envelope: {
+  context: SyncTagInvalidateContext
+  event: SyncTagInvalidateEvent
+  done: SyncTagInvalidateCallback
+}) => void | Promise<void>
