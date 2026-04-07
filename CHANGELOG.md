@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.3.0](https://github.com/sanity-io/functions-node/compare/v1.2.1...v1.3.0) (2026-04-07)
+
+
+### Features
+
+* add syncTagInvalidateEventHandler ([#18](https://github.com/sanity-io/functions-node/issues/18)) ([840a552](https://github.com/sanity-io/functions-node/commit/840a552c14003d6def24324b05d17073835ca65e))
+
 ## [1.2.1](https://github.com/sanity-io/functions-node/compare/v1.2.0...v1.2.1) (2026-03-05)
 
 
