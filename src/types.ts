@@ -138,7 +138,7 @@ export type SyncTagInvalidateCallback = (syncTags: string[]) => Promise<Response
  */
 export interface SyncTagInvalidateContext extends Omit<FunctionContext, 'clientOptions'> {
   /**
-   * A short-lived token that should be used to notify Sanity of sync tag invalidation routine completion. Recommended to use the `callback` helper argument provided to the sync tag invalidate event handler instead of this token directly.
+   * A short-lived token that should be used to notify Sanity of sync tag invalidation routine completion. Recommended to use the `done` helper argument provided to the sync tag invalidate event handler instead of this token directly.
    */
   callbackToken: string
   clientOptions: {
@@ -160,5 +160,5 @@ export interface SyncTagInvalidateContext extends Omit<FunctionContext, 'clientO
 export type SyncTagInvalidateEventHandler = (envelope: {
   context: SyncTagInvalidateContext
   event: SyncTagInvalidateEvent
-  callback: SyncTagInvalidateCallback
+  done: SyncTagInvalidateCallback
 }) => void | Promise<void>

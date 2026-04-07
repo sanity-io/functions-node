@@ -113,7 +113,7 @@ describe('syncTagInvalidateEventHandler', () => {
     data: {syncTags: ['abc:123', 'def:456']},
   }
 
-  const callback: SyncTagInvalidateCallback = async (_syncTags) => new Response()
+  const done: SyncTagInvalidateCallback = async (_syncTags) => new Response()
 
   test('has correct type signature', () => {
     expectTypeOf(syncTagInvalidateEventHandler).toBeFunction()
@@ -128,12 +128,12 @@ describe('syncTagInvalidateEventHandler', () => {
     const handler = syncTagInvalidateEventHandler((envelope) => {
       expectTypeOf(envelope.context).toEqualTypeOf<SyncTagInvalidateContext>()
       expectTypeOf(envelope.event).toEqualTypeOf<SyncTagInvalidateEvent>()
-      expectTypeOf(envelope.callback).toEqualTypeOf<SyncTagInvalidateCallback>()
+      expectTypeOf(envelope.done).toEqualTypeOf<SyncTagInvalidateCallback>()
       expect(envelope.context).toEqual(context)
       expect(envelope.event).toEqual(event)
       expectTypeOf(envelope.event.data.syncTags).toBeArray()
     })
 
-    handler({callback, context, event})
+    handler({context, done, event})
   })
 })
