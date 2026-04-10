@@ -1,0 +1,21 @@
+{
+  "$schema": "https://typedoc.org/schema.json",
+  "entryPoints": [
+    "src/index.ts"
+  ],
+  "includeVersion": true,
+  "entryPointStrategy": "expand",
+  "json": "./docs/typedoc-output.json",
+  "html": "./docs/html",
+  "excludePrivate": true,
+  "excludeProtected": true,
+  "excludeInternal": true,
+  "excludeExternals": true,
+  "categoryOrder": [
+    "Definers", // src/definers/
+    "Functions Types", // function resource types
+  ],
+  "navigation": {
+    "includeCategories": true
+  }
+}
