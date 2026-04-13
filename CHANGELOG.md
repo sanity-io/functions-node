@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.3.1](https://github.com/sanity-io/functions-node/compare/v1.3.0...v1.3.1) (2026-04-13)
+
+
+### Bug Fixes
+
+* **ci:** change package name for TypeDoc upload action ([#24](https://github.com/sanity-io/functions-node/issues/24)) ([2d55dd9](https://github.com/sanity-io/functions-node/commit/2d55dd94694ea1a2d72456798a9264e5a7589b39))
+
 ## [1.3.0](https://github.com/sanity-io/functions-node/compare/v1.2.1...v1.3.0) (2026-04-07)
 
 
