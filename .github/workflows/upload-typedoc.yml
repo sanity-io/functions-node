@@ -120,7 +120,7 @@ jobs:
         if: (startsWith(github.ref, 'refs/tags/v') || github.event.inputs.upload == 'true') && steps.generate.outputs.success == 'true'
         uses: sanity-io/reference-api-typedoc/.github/actions/typedoc-upload@main
         with:
-          packageName: "@sanity/blueprints"
+          packageName: "@sanity/functions"
           version: ${{ steps.version.outputs.version }}
           typedocJsonPath: "docs/typedoc-output.json"
         env:
