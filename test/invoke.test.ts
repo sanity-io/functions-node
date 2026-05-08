@@ -48,18 +48,20 @@ describe('invoke', () => {
         expect(request.Payload).toEqual({ event })
     })
 
-    test('invoke makes no AWS calls when resource envelope is empty', async () => {
+    test('invoke throws when resource envelope has no dispatchable target', async () => {
         awsLite.testing.mock('DynamoDB.GetItem', { Item: { resources: {} } })
 
-        await invoke({ name: 'my-fn', event: { hello: 'world' } })
+        await expect(invoke({ name: 'my-fn', event: { hello: 'world' } })).rejects.toThrow(
+            'No dispatchable resource for function: my-fn',
+        )
 
-        expect(awsLite.testing.getAllRequests('SNS.Publish')).toBeUndefined()
-        expect(awsLite.testing.getAllRequests('SQS.SendMessage')).toBeUndefined()
-        expect(awsLite.testing.getAllRequests('Lambda.Invoke')).toBeUndefined()
     })
 
     test('invoke queries DynamoDB with the expected key shape', async () => {
-        awsLite.testing.mock('DynamoDB.GetItem', { Item: { resources: {} } })
+        awsLite.testing.mock('DynamoDB.GetItem', {
+            Item: { resources: { topic: { logicalResourceId: 'foo', physicalResourceId: 'arn:topic' } } },
+        })
+        awsLite.testing.mock('SNS.Publish', { MessageId: 'm-1' })
 
         await invoke({ name: 'my-fn', event: {} })
 
@@ -70,6 +72,12 @@ describe('invoke', () => {
 
     test('invoke throws when name is empty', async () => {
         await expect(invoke({ name: '', event: {} })).rejects.toThrow('Function name was not provided')
+    })
+
+    test('invoke throws when function is not found in disco table', async () => {
+        awsLite.testing.mock('DynamoDB.GetItem', {})
+
+        await expect(invoke({ name: 'missing-fn', event: {} })).rejects.toThrow('Function not found: missing-fn')
     })
 })
 

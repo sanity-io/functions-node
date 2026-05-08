@@ -25,14 +25,12 @@ async function getResource(name: string): Promise<FunctionResourceEnvelope> {
         },
         ProjectionExpression: 'resources',
     })
-    return (result?.Item?.['resources'] as FunctionResourceEnvelope | undefined) ?? {}
-
+    if (!result?.Item) throw new Error(`Function not found: ${name}`)
+    return result.Item['resources'] as FunctionResourceEnvelope
 }
 
 export async function invoke({ name, event }: FunctionInvokeParameters) {
     const resource = await getResource(name)
-
-    console.log(resource)
 
     if (resource.topic) {
         console.log('publishing a topic')
@@ -53,5 +51,7 @@ export async function invoke({ name, event }: FunctionInvokeParameters) {
             FunctionName: resource.function.physicalResourceId,
             Payload: { event },
         })
+    } else {
+        throw new Error(`No dispatchable resource for function: ${name}`)
     }
 }
