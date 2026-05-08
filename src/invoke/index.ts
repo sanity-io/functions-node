@@ -28,7 +28,7 @@ async function getResource(name: string): Promise<FunctionResourceEnvelope> {
     ProjectionExpression: 'resources',
   })
   if (!result?.Item) throw new Error(`Function not found: ${name}`)
-  return result.Item['resources'] as FunctionResourceEnvelope
+  return result.Item['resources'] as unknown as FunctionResourceEnvelope
 }
 
 export async function invoke(name: string, payload: FunctionPayload) {

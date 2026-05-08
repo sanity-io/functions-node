@@ -13,7 +13,7 @@ describe('invoke', () => {
     })
     awsLite.testing.mock('SNS.Publish', {MessageId: 'm-1'})
 
-    const payload = {event: {hello: 'world'}, context}
+    const payload = {event: {data: {hello: 'world'}}, context}
     await invoke('my-fn', payload)
 
     const {request} = awsLite.testing.getLastRequest('SNS.Publish')
@@ -27,7 +27,7 @@ describe('invoke', () => {
     })
     awsLite.testing.mock('SQS.SendMessage', {MessageId: 'm-1'})
 
-    const payload = {event: {hello: 'world'}, context}
+    const payload = {event: {data: {hello: 'world'}}, context}
     await invoke('my-fn', payload)
 
     const {request} = awsLite.testing.getLastRequest('SQS.SendMessage')
@@ -42,7 +42,7 @@ describe('invoke', () => {
     })
     awsLite.testing.mock('Lambda.Invoke', {StatusCode: 200})
 
-    const payload = {event: {hello: 'world'}, context}
+    const payload = {event: {data: {hello: 'world'}}, context}
     await invoke('my-fn', payload)
 
     const {request} = awsLite.testing.getLastRequest('Lambda.Invoke')
@@ -53,7 +53,9 @@ describe('invoke', () => {
   test('invoke throws when resource envelope has no dispatchable target', async () => {
     awsLite.testing.mock('DynamoDB.GetItem', {Item: {resources: {}}})
 
-    await expect(invoke('my-fn', {event: {hello: 'world'}, context})).rejects.toThrow('No dispatchable resource for function: my-fn')
+    await expect(invoke('my-fn', {event: {data: {hello: 'world'}}, context})).rejects.toThrow(
+      'No dispatchable resource for function: my-fn',
+    )
   })
 
   test('invoke queries DynamoDB with the expected key shape', async () => {
@@ -62,7 +64,7 @@ describe('invoke', () => {
     })
     awsLite.testing.mock('SNS.Publish', {MessageId: 'm-1'})
 
-    await invoke('my-fn', {event: {}, context})
+    await invoke('my-fn', {event: {data: {}}, context})
 
     const {request} = awsLite.testing.getLastRequest('DynamoDB.GetItem')
     expect(request.TableName).toBe('test-disco-table')
@@ -70,17 +72,17 @@ describe('invoke', () => {
   })
 
   test('invoke throws when name is empty', async () => {
-    await expect(invoke('', {event: {}, context})).rejects.toThrow('Function name was not provided')
+    await expect(invoke('', {event: {data: {}}, context})).rejects.toThrow('Function name was not provided')
   })
 
   test('invoke throws when function is not found in disco table', async () => {
     awsLite.testing.mock('DynamoDB.GetItem', {})
 
-    await expect(invoke('missing-fn', {event: {}, context})).rejects.toThrow('Function not found: missing-fn')
+    await expect(invoke('missing-fn', {event: {data: {}}, context})).rejects.toThrow('Function not found: missing-fn')
   })
 
   test('invoke throws when event payload exceeds 256KB', async () => {
-    const event = {blob: 'a'.repeat(256 * 1024)}
+    const event = {data: {blob: 'a'.repeat(256 * 1024)}}
 
     await expect(invoke('my-fn', {event, context})).rejects.toThrow('Event exceeds maximum size of 256KB')
     expect(awsLite.testing.getAllRequests('DynamoDB.GetItem')).toBeUndefined()

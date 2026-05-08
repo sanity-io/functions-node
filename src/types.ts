@@ -172,6 +172,9 @@ export type FunctionPayload = {
   context: FunctionContext | ScheduledFunctionContext | SyncTagInvalidateContext
 }
 
+/**
+ * The definition of a function resource in our resource discovery table
+ */
 export type FunctionResource = {
   logicalResourceId: string
   physicalResourceId: string
