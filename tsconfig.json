@@ -35,7 +35,8 @@
     "allowSyntheticDefaultImports": true,
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
-    "erasableSyntaxOnly": true
+    "erasableSyntaxOnly": true,
+    "types": ["node", "@aws-lite/dynamodb-types", "@aws-lite/lambda-types", "@aws-lite/sns-types", "@aws-lite/sqs-types"]
   },
   "exclude": ["node_modules", "dist"],
   "include": ["src/**/*.ts"]
