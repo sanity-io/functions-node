@@ -2,6 +2,8 @@ import awsLite from '@aws-lite/client'
 import {beforeEach, describe, expect, test} from 'vitest'
 import {invoke} from '../src/invoke/index.js'
 
+const context = {}
+
 beforeEach(() => awsLite.testing.reset())
 
 describe('invoke', () => {
@@ -11,12 +13,12 @@ describe('invoke', () => {
     })
     awsLite.testing.mock('SNS.Publish', {MessageId: 'm-1'})
 
-    const event = {hello: 'world'}
-    await invoke({name: 'my-fn', event})
+    const payload = {event: {hello: 'world'}, context}
+    await invoke('my-fn', payload)
 
     const {request} = awsLite.testing.getLastRequest('SNS.Publish')
     expect(request.TopicArn).toBe('arn:topic')
-    expect(request.Message).toBe(JSON.stringify(event))
+    expect(request.Message).toBe(JSON.stringify(payload))
   })
 
   test('invoke publishes to SQS queue', async () => {
@@ -25,12 +27,12 @@ describe('invoke', () => {
     })
     awsLite.testing.mock('SQS.SendMessage', {MessageId: 'm-1'})
 
-    const event = {hello: 'world'}
-    await invoke({name: 'my-fn', event})
+    const payload = {event: {hello: 'world'}, context}
+    await invoke('my-fn', payload)
 
     const {request} = awsLite.testing.getLastRequest('SQS.SendMessage')
     expect(request.QueueUrl).toBe('https://my-queue')
-    expect(request.MessageBody).toBe(JSON.stringify(event))
+    expect(request.MessageBody).toBe(JSON.stringify(payload))
     expect(request.MessageGroupId).toBe('my-fn')
   })
 
@@ -40,18 +42,18 @@ describe('invoke', () => {
     })
     awsLite.testing.mock('Lambda.Invoke', {StatusCode: 200})
 
-    const event = {hello: 'world'}
-    await invoke({name: 'my-fn', event})
+    const payload = {event: {hello: 'world'}, context}
+    await invoke('my-fn', payload)
 
     const {request} = awsLite.testing.getLastRequest('Lambda.Invoke')
     expect(request.FunctionName).toBe('arn:lambda:my-fn')
-    expect(request.Payload).toEqual({event})
+    expect(request.Payload).toEqual({payload})
   })
 
   test('invoke throws when resource envelope has no dispatchable target', async () => {
     awsLite.testing.mock('DynamoDB.GetItem', {Item: {resources: {}}})
 
-    await expect(invoke({name: 'my-fn', event: {hello: 'world'}})).rejects.toThrow('No dispatchable resource for function: my-fn')
+    await expect(invoke('my-fn', {event: {hello: 'world'}, context})).rejects.toThrow('No dispatchable resource for function: my-fn')
   })
 
   test('invoke queries DynamoDB with the expected key shape', async () => {
@@ -60,7 +62,7 @@ describe('invoke', () => {
     })
     awsLite.testing.mock('SNS.Publish', {MessageId: 'm-1'})
 
-    await invoke({name: 'my-fn', event: {}})
+    await invoke('my-fn', {event: {}, context})
 
     const {request} = awsLite.testing.getLastRequest('DynamoDB.GetItem')
     expect(request.TableName).toBe('test-disco-table')
@@ -68,19 +70,19 @@ describe('invoke', () => {
   })
 
   test('invoke throws when name is empty', async () => {
-    await expect(invoke({name: '', event: {}})).rejects.toThrow('Function name was not provided')
+    await expect(invoke('', {event: {}, context})).rejects.toThrow('Function name was not provided')
   })
 
   test('invoke throws when function is not found in disco table', async () => {
     awsLite.testing.mock('DynamoDB.GetItem', {})
 
-    await expect(invoke({name: 'missing-fn', event: {}})).rejects.toThrow('Function not found: missing-fn')
+    await expect(invoke('missing-fn', {event: {}, context})).rejects.toThrow('Function not found: missing-fn')
   })
 
   test('invoke throws when event payload exceeds 256KB', async () => {
     const event = {blob: 'a'.repeat(256 * 1024)}
 
-    await expect(invoke({name: 'my-fn', event})).rejects.toThrow('Event exceeds maximum size of 256KB')
+    await expect(invoke('my-fn', {event, context})).rejects.toThrow('Event exceeds maximum size of 256KB')
     expect(awsLite.testing.getAllRequests('DynamoDB.GetItem')).toBeUndefined()
   })
 })

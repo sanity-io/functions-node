@@ -167,9 +167,9 @@ export interface ResourcesApi {
   webhook(name: string): BlueprintResource | undefined
  *
  */
-export type FunctionInvokeParameters = {
-  name: string
+export type FunctionPayload = {
   event: Record<string, unknown>
+  context: FunctionContext | ScheduledFunctionContext | SyncTagInvalidateContext
 }
 
 export type FunctionResource = {
