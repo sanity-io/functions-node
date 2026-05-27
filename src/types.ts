@@ -39,6 +39,8 @@ export interface FunctionContext {
     projectId: string
     token: string
   }
+  /** Resource interface that allows access to Blueprint Resources */
+  resources: ResourcesApi
 }
 
 /**
@@ -74,6 +76,8 @@ export interface ScheduledFunctionContext {
     projectId?: string
     token?: string
   }
+  /** Resource interface that allows access to Blueprint Resources */
+  resources: ResourcesApi
 }
 
 /**
@@ -162,3 +166,33 @@ export type SyncTagInvalidateEventHandler = (envelope: {
   event: SyncTagInvalidateEvent
   done: SyncTagInvalidateCallback
 }) => void | Promise<void>
+
+/**
+ * An interface to describe resources found in a Blueprint
+ */
+export interface BlueprintResource {
+  id: string
+  name: string
+  type: string
+}
+
+interface ResourcesApiCore {
+  /** Cross-type lookup by name: `context.resources('my-proj')`. */
+  (name: string): BlueprintResource | undefined
+  /** Flat array of every resource across types. */
+  all(): BlueprintResource[]
+  /** Iterate every resource: `for (const r of context.resources)`. */
+  [Symbol.iterator](): IterableIterator<BlueprintResource>
+}
+
+/** Per-type lookup, e.g. `context.resources.project('my-proj')`. Unknown types yield a function that
+returns `undefined`. */
+type ResourcesApiByType = Record<string, (name: string) => BlueprintResource | undefined>
+
+/**
+ * Callable ResourcesApi
+ * Invoke directly for a cross-type lookup (`resources('my-proj')`)
+ * Use `.<type>(name)` for a per-type lookup (`resources.project('my-proj')`)
+ * `.all()` for the flat list, or iterate.
+ */
+export type ResourcesApi = ResourcesApiCore & ResourcesApiByType
