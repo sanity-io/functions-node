@@ -29,6 +29,7 @@ describe('ResourcesApi', () => {
 
     expectTypeOf<ResourcesApi['cors']>().toEqualTypeOf<PerTypeLookup>()
     expectTypeOf<ResourcesApi['dataset']>().toEqualTypeOf<PerTypeLookup>()
+    expectTypeOf<ResourcesApi['function']>().toEqualTypeOf<PerTypeLookup>()
     expectTypeOf<ResourcesApi['project']>().toEqualTypeOf<PerTypeLookup>()
     expectTypeOf<ResourcesApi['role']>().toEqualTypeOf<PerTypeLookup>()
     expectTypeOf<ResourcesApi['webhook']>().toEqualTypeOf<PerTypeLookup>()
@@ -36,6 +37,7 @@ describe('ResourcesApi', () => {
     const resources = {} as ResourcesApi
     expectTypeOf(resources.cors('my-cors')).toEqualTypeOf<BlueprintResource | undefined>()
     expectTypeOf(resources.dataset('my-dataset')).toEqualTypeOf<BlueprintResource | undefined>()
+    expectTypeOf(resources.function('my-function')).toEqualTypeOf<BlueprintResource | undefined>()
     expectTypeOf(resources.project('my-proj')).toEqualTypeOf<BlueprintResource | undefined>()
     expectTypeOf(resources.role('my-role')).toEqualTypeOf<BlueprintResource | undefined>()
     expectTypeOf(resources.webhook('my-webhook')).toEqualTypeOf<BlueprintResource | undefined>()
@@ -43,8 +45,8 @@ describe('ResourcesApi', () => {
 
   test('unknown resource types are not part of the API', () => {
     const resources = {} as ResourcesApi
-    // @ts-expect-error `function` is not a known resource type
-    assertType(resources.function('my-fn'))
+    // @ts-expect-error `studio` is not a known resource type
+    assertType(resources.studio('my-studio'))
   })
 
   test('rejects non-string arguments to the callable form', () => {

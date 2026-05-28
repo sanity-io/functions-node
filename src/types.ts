@@ -161,6 +161,7 @@ export interface ResourcesApi {
   /** Type specific lookup by name: `context.cors('my-cors')` */
   cors(name: string): BlueprintResource | undefined
   dataset(name: string): BlueprintResource | undefined
+  function(name: string): BlueprintResource | undefined
   project(name: string): BlueprintResource | undefined
   role(name: string): BlueprintResource | undefined
   webhook(name: string): BlueprintResource | undefined
