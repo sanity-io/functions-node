@@ -16,8 +16,6 @@ export function documentEventHandler<IData = any>(handler: DocumentEventHandler<
  * Defines a "scheduled event" function handler.
  * Returns the handler function as-is, only providing the types and doing basic validation.
  *
- * @alpha
- * @hidden
  * @param handler - The event handler function to use.
  * @returns The handler function, unmodified.
  */
