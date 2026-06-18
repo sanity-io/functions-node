@@ -69,7 +69,8 @@ export async function invoke(name: string, payload: FunctionPayload) {
   } else if (resource.function) {
     await aws.Lambda.Invoke({
       FunctionName: resource.function.physicalResourceId,
-      Payload: {payload},
+      Payload: payload,
+      InvocationType: 'Event',
     })
   } else {
     throw new Error(`No invokeable resource for function: ${name}`)

@@ -46,7 +46,7 @@ describe('invoke', () => {
 
     const {request} = awsLite.testing.getLastRequest('Lambda.Invoke')
     expect(request.FunctionName).toBe('arn:lambda:my-fn')
-    expect(request.Payload).toEqual({payload})
+    expect(request.Payload).toEqual(payload)
   })
 
   test('invoke throws when resource envelope has no invokeable target', async () => {
