@@ -103,12 +103,12 @@ export interface SyncTagInvalidateEvent {
 /**
  * A function handler for a document event.
  */
-export type DocumentEventHandler<IData = any> = (envelope: { context: FunctionContext; event: DocumentEvent<IData> }) => void | Promise<void>
+export type DocumentEventHandler<IData = any> = (envelope: {context: FunctionContext; event: DocumentEvent<IData>}) => void | Promise<void>
 
 /**
  * A function handler for a schedule event.
  */
-export type ScheduledEventHandler = (envelope: { context: ScheduledFunctionContext }) => void | Promise<void>
+export type ScheduledEventHandler = (envelope: {context: ScheduledFunctionContext}) => void | Promise<void>
 
 /**
  * A callback function to invoke once a sync-tag-invalidate event has been processed. Signals to Sanity that sync tag invalidation has completed.
@@ -165,10 +165,13 @@ export interface ResourcesApi {
   project(name: string): BlueprintResource | undefined
   role(name: string): BlueprintResource | undefined
   webhook(name: string): BlueprintResource | undefined
- *
+}
+
+/**
+ * The payload for the `invoke` method
  */
 export type FunctionPayload = {
-  event: Record<string, unknown>
+  event: DocumentEvent
   context: FunctionContext | ScheduledFunctionContext | SyncTagInvalidateContext
 }
 
@@ -180,12 +183,8 @@ export type FunctionResource = {
   physicalResourceId: string
 }
 
+type FunctionResourceKey = 'eventsourcemapping' | 'function' | 'parameter' | 'queue' | 'schedule' | 'subscription' | 'topic'
+
 export type FunctionResourceEnvelope = {
-  eventsourcemapping?: FunctionResource
-  function?: FunctionResource
-  parameter?: FunctionResource
-  queue?: FunctionResource
-  schedule?: FunctionResource
-  subscription?: FunctionResource
-  topic?: FunctionResource
-}
+  [K in FunctionResourceKey]-?: {[P in K]: FunctionResource} & {[P in Exclude<FunctionResourceKey, K>]?: FunctionResource}
+}[FunctionResourceKey]
