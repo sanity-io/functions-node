@@ -37,6 +37,7 @@ async function getResource(name: string, aws: awsLite.AwsLiteClient): Promise<Fu
     ProjectionExpression: 'resources',
   })
   if (!result?.Item) throw new Error(`Function not found: ${name}`)
+  if (!result.Item['resources']) throw new Error(`Resource record for ${name} is missing resources`)
   return result.Item['resources'] as unknown as FunctionResourceEnvelope
 }
 

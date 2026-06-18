@@ -78,6 +78,14 @@ describe('invoke', () => {
     await expect(invoke('missing-fn', {event: {data: {}}, context})).rejects.toThrow('Function not found: missing-fn')
   })
 
+  test('invoke throws when function is found but missing resource', async () => {
+    awsLite.testing.mock('DynamoDB.GetItem', {Item: {}})
+
+    await expect(invoke('missing-resource', {event: {data: {}}, context})).rejects.toThrow(
+      'Resource record for missing-resource is missing resources',
+    )
+  })
+
   test('invoke throws when event payload exceeds 256KB', async () => {
     const event = {data: {blob: 'a'.repeat(256 * 1024)}}
 
