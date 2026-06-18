@@ -33,7 +33,6 @@ describe('invoke', () => {
     const {request} = awsLite.testing.getLastRequest('SQS.SendMessage')
     expect(request.QueueUrl).toBe('https://my-queue')
     expect(request.MessageBody).toBe(JSON.stringify(payload))
-    expect(request.MessageGroupId).toBe('my-fn')
   })
 
   test('invoke calls Lambda function', async () => {

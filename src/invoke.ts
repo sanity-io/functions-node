@@ -53,7 +53,6 @@ export async function invoke(name: string, payload: FunctionPayload) {
     await aws.SQS.SendMessage({
       MessageBody: stringPayload,
       QueueUrl: resource.queue.physicalResourceId,
-      MessageGroupId: name,
     })
   } else if (resource.function) {
     await aws.Lambda.Invoke({
