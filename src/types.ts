@@ -1,7 +1,5 @@
 /**
  * The context object passed to the function handler.
- *
- * @beta
  */
 export interface FunctionContext {
   /** The resource type of the event source; resource type that invoked the function. */
@@ -31,7 +29,6 @@ export interface FunctionContext {
    *   ...context.clientOptions,
    * })
    * ```
-   * @beta
    */
   clientOptions: {
     apiHost?: string
@@ -39,12 +36,12 @@ export interface FunctionContext {
     projectId: string
     token: string
   }
+  /** Resource interface that allows access to Blueprint Resources */
+  resources: ResourcesApi
 }
 
 /**
  * The context object passed to the schedule function handler.
- *
- * @beta
  */
 export interface ScheduledFunctionContext {
   /**
@@ -66,7 +63,6 @@ export interface ScheduledFunctionContext {
    *   ...context.clientOptions,
    * })
    * ```
-   * @beta
    */
   clientOptions?: {
     apiHost?: string
@@ -74,35 +70,29 @@ export interface ScheduledFunctionContext {
     projectId?: string
     token?: string
   }
+  /** Resource interface that allows access to Blueprint Resources */
+  resources: ResourcesApi
 }
 
 /**
  * The event object received by the function handler in the case of a document event,
  * such as a publish, unpublish, delete or mutation event and similar.
- *
- * @beta
  */
 export interface DocumentEvent<IData = any> {
   /**
    * The data delivered to the function. This is the result of applying any configured
    * GROQ-projection to the changed document. If no projection is configured, this is
    * the document itself.
-   *
-   * @beta
    */
   data: IData
 }
 
 /**
  * The event object received by the function handler in the case of a sync-tag-invalidate event.
- *
- * @beta
  */
 export interface SyncTagInvalidateEvent {
   /**
    * The sync tags for use with cache invalidation and notifying the callback endpoint once tags are invalidated.
-   *
-   * @beta
    */
   data: {
     /** Array of sync tags to be invalidated. */
@@ -112,29 +102,21 @@ export interface SyncTagInvalidateEvent {
 
 /**
  * A function handler for a document event.
- *
- * @beta
  */
 export type DocumentEventHandler<IData = any> = (envelope: {context: FunctionContext; event: DocumentEvent<IData>}) => void | Promise<void>
 
 /**
  * A function handler for a schedule event.
- *
- * @beta
  */
 export type ScheduledEventHandler = (envelope: {context: ScheduledFunctionContext}) => void | Promise<void>
 
 /**
  * A callback function to invoke once a sync-tag-invalidate event has been processed. Signals to Sanity that sync tag invalidation has completed.
- *
- * @beta
  */
 export type SyncTagInvalidateCallback = (syncTags: string[]) => Promise<Response>
 
 /**
  * The context object passed to the sync tag invalidate event handler.
- *
- * @beta
  */
 export interface SyncTagInvalidateContext extends Omit<FunctionContext, 'clientOptions'> {
   /**
@@ -154,11 +136,33 @@ export interface SyncTagInvalidateContext extends Omit<FunctionContext, 'clientO
 }
 /**
  * A function handler for a sync-tag-invalidate event.
- *
- * @beta
  */
 export type SyncTagInvalidateEventHandler = (envelope: {
   context: SyncTagInvalidateContext
   event: SyncTagInvalidateEvent
   done: SyncTagInvalidateCallback
 }) => void | Promise<void>
+
+/**
+ * An interface to describe resources found in a Blueprint
+ */
+export interface BlueprintResource {
+  id: string
+  name: string
+  type: string
+}
+export interface ResourcesApi {
+  /** Cross-type lookup by name: `context.resources('my-proj')`. */
+  (name: string): BlueprintResource | undefined
+  /** Flat array of every resource across types. */
+  all(): BlueprintResource[]
+  /** Iterate every resource: `for (const r of context.resources)`. */
+  [Symbol.iterator](): IterableIterator<BlueprintResource>
+  /** Type specific lookup by name: `context.cors('my-cors')` */
+  cors(name: string): BlueprintResource | undefined
+  dataset(name: string): BlueprintResource | undefined
+  function(name: string): BlueprintResource | undefined
+  project(name: string): BlueprintResource | undefined
+  role(name: string): BlueprintResource | undefined
+  webhook(name: string): BlueprintResource | undefined
+}

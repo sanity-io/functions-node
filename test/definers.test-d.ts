@@ -1,9 +1,11 @@
 import {assertType, describe, expect, expectTypeOf, test} from 'vitest'
 import {
+  type BlueprintResource,
   type DocumentEvent,
   type DocumentEventHandler,
   documentEventHandler,
   type FunctionContext,
+  type ResourcesApi,
   type ScheduledEventHandler,
   type ScheduledFunctionContext,
   type SyncTagInvalidateCallback,
@@ -14,6 +16,24 @@ import {
   syncTagInvalidateEventHandler,
 } from '../src'
 
+const mockResourcesApi = (resources: BlueprintResource[] = []): ResourcesApi => {
+  const findByName = (name: string) => resources.find((r) => r.name === name)
+  const all = () => resources
+
+  return new Proxy(findByName, {
+    get: (_target, prop) => {
+      if (prop === 'all') return all
+      if (prop === Symbol.iterator) {
+        return function* () {
+          yield* all()
+        }
+      }
+      if (typeof prop !== 'string' || prop === 'then') return undefined
+      return (name: string) => resources.find((r) => r.type === prop && r.name === name)
+    },
+  }) as unknown as ResourcesApi
+}
+
 describe('documentEventHandler', () => {
   const context: FunctionContext = {
     eventResourceId: 'abc123.xyz789',
@@ -21,6 +41,7 @@ describe('documentEventHandler', () => {
     functionResourceId: 'abc123',
     functionResourceType: 'project',
     clientOptions: {projectId: 'abc123', dataset: 'xyz789', token: 'sk_some-token'},
+    resources: mockResourcesApi(),
   }
 
   const event: DocumentEvent = {
@@ -70,6 +91,7 @@ describe('documentEventHandler', () => {
 describe('scheduledEventHandler', () => {
   const context: ScheduledFunctionContext = {
     local: true,
+    resources: mockResourcesApi(),
   }
 
   test('has correct type signature', () => {
@@ -107,6 +129,7 @@ describe('syncTagInvalidateEventHandler', () => {
     functionResourceId: 'abc123',
     functionResourceType: 'project',
     clientOptions: {apiHost: 'api.sanity.io', projectId: 'abc123', dataset: 'xyz789'},
+    resources: mockResourcesApi(),
   }
 
   const event: SyncTagInvalidateEvent = {
