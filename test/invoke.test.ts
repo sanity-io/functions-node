@@ -1,6 +1,6 @@
 import awsLite from '@aws-lite/client'
 import {beforeEach, describe, expect, test} from 'vitest'
-import {invoke} from '../src/invoke/index.js'
+import {invoke} from '../src/invoke.js'
 
 const context = {}
 
@@ -50,12 +50,10 @@ describe('invoke', () => {
     expect(request.Payload).toEqual({payload})
   })
 
-  test('invoke throws when resource envelope has no dispatchable target', async () => {
+  test('invoke throws when resource envelope has no invokeable target', async () => {
     awsLite.testing.mock('DynamoDB.GetItem', {Item: {resources: {}}})
 
-    await expect(invoke('my-fn', {event: {data: {hello: 'world'}}, context})).rejects.toThrow(
-      'No dispatchable resource for function: my-fn',
-    )
+    await expect(invoke('my-fn', {event: {data: {hello: 'world'}}, context})).rejects.toThrow('No invokeable resource for function: my-fn')
   })
 
   test('invoke queries DynamoDB with the expected key shape', async () => {

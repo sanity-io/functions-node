@@ -1,7 +1,7 @@
 import {Buffer} from 'node:buffer'
 import {env} from 'node:process'
 import awsLite from '@aws-lite/client'
-import type {FunctionPayload, FunctionResourceEnvelope} from '../types.js'
+import type {FunctionPayload, FunctionResourceEnvelope} from './types.js'
 
 const MAX_EVENT_SIZE_BYTES = 256 * 1024
 
@@ -45,25 +45,22 @@ export async function invoke(name: string, payload: FunctionPayload) {
 
   // Determine which method to invoke the function
   if (resource.topic) {
-    console.log('publishing a topic')
     await aws.SNS.Publish({
       TopicArn: resource.topic.physicalResourceId,
       Message: stringPayload,
     })
   } else if (resource.queue) {
-    console.log('sending a message')
     await aws.SQS.SendMessage({
       MessageBody: stringPayload,
       QueueUrl: resource.queue.physicalResourceId,
       MessageGroupId: name,
     })
   } else if (resource.function) {
-    console.log('calling a function')
     await aws.Lambda.Invoke({
       FunctionName: resource.function.physicalResourceId,
       Payload: {payload},
     })
   } else {
-    throw new Error(`No dispatchable resource for function: ${name}`)
+    throw new Error(`No invokeable resource for function: ${name}`)
   }
 }
