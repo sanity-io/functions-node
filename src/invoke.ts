@@ -5,17 +5,26 @@ import type {FunctionPayload, FunctionResourceEnvelope} from './types.js'
 
 const MAX_EVENT_SIZE_BYTES = 256 * 1024
 
-const aws = await awsLite({
-  plugins: [import('@aws-lite/dynamodb'), import('@aws-lite/lambda'), import('@aws-lite/sns'), import('@aws-lite/sqs')],
-})
+let awsPromise: ReturnType<typeof awsLite> | undefined
 
 const PARTITION_KEY = 'arc-app-res'
 
 /**
+ * lazy load aws-lite
+ */
+function getAwsLite() {
+  if (!awsPromise) {
+    awsPromise = awsLite({
+      plugins: [import('@aws-lite/dynamodb'), import('@aws-lite/lambda'), import('@aws-lite/sns'), import('@aws-lite/sqs')],
+    })
+  }
+  return awsPromise
+}
+/**
  * Gets a specific resource based off of function name
  * @param {string} name
  */
-async function getResource(name: string): Promise<FunctionResourceEnvelope> {
+async function getResource(name: string, aws: awsLite.AwsLiteClient): Promise<FunctionResourceEnvelope> {
   const TableName = env['SANITY_DISCO']
   if (!TableName) throw new Error('SANITY_DISCO env var not set')
 
@@ -34,14 +43,17 @@ async function getResource(name: string): Promise<FunctionResourceEnvelope> {
 export async function invoke(name: string, payload: FunctionPayload) {
   if (!name) throw new Error('Function name was not provided')
 
+  const aws = await getAwsLite()
+  if (!aws) throw new Error(`Unable to invoke function: ${name}`)
+
   const stringPayload = JSON.stringify(payload)
   // Check to make sure payload is not over the max we can handle
   if (Buffer.byteLength(stringPayload, 'utf8') > MAX_EVENT_SIZE_BYTES) {
-    throw new Error(`Event exceeds maximum size of 256KB`)
+    throw new Error(`Payload exceeds maximum size of ${MAX_EVENT_SIZE_BYTES / 1024}KB`)
   }
 
   // Look up the function details
-  const resource = await getResource(name)
+  const resource = await getResource(name, aws)
 
   // Determine which method to invoke the function
   if (resource.topic) {

@@ -81,7 +81,7 @@ describe('invoke', () => {
   test('invoke throws when event payload exceeds 256KB', async () => {
     const event = {data: {blob: 'a'.repeat(256 * 1024)}}
 
-    await expect(invoke('my-fn', {event, context})).rejects.toThrow('Event exceeds maximum size of 256KB')
+    await expect(invoke('my-fn', {event, context})).rejects.toThrow('Payload exceeds maximum size of 256KB')
     expect(awsLite.testing.getAllRequests('DynamoDB.GetItem')).toBeUndefined()
   })
 })
