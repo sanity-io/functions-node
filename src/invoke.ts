@@ -16,10 +16,14 @@ function getAwsLite() {
   if (!awsPromise) {
     awsPromise = awsLite({
       plugins: [import('@aws-lite/dynamodb'), import('@aws-lite/lambda'), import('@aws-lite/sns'), import('@aws-lite/sqs')],
+    }).catch((err) => {
+      awsPromise = undefined
+      throw err
     })
   }
   return awsPromise
 }
+
 /**
  * Gets a specific resource based off of function name
  * @param {string} name
@@ -44,14 +48,14 @@ async function getResource(name: string, aws: awsLite.AwsLiteClient): Promise<Fu
 export async function invoke(name: string, payload: FunctionPayload) {
   if (!name) throw new Error('Function name was not provided')
 
-  const aws = await getAwsLite()
-  if (!aws) throw new Error(`Unable to invoke function: ${name}`)
-
   const stringPayload = JSON.stringify(payload)
   // Check to make sure payload is not over the max we can handle
   if (Buffer.byteLength(stringPayload, 'utf8') > MAX_EVENT_SIZE_BYTES) {
     throw new Error(`Payload exceeds maximum size of ${MAX_EVENT_SIZE_BYTES / 1024}KB`)
   }
+
+  const aws = await getAwsLite()
+  if (!aws) throw new Error(`Unable to invoke function: ${name}`)
 
   // Look up the function details
   const resource = await getResource(name, aws)
