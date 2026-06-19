@@ -133,6 +133,8 @@ export interface SyncTagInvalidateContext extends Omit<FunctionContext, 'clientO
      */
     token?: string
   }
+  /** Resource interface that allows access to Blueprint Resources */
+  resources: ResourcesApi
 }
 /**
  * A function handler for a sync-tag-invalidate event.
@@ -166,3 +168,25 @@ export interface ResourcesApi {
   role(name: string): BlueprintResource | undefined
   webhook(name: string): BlueprintResource | undefined
 }
+
+/**
+ * The payload for the `invoke` method
+ */
+export type FunctionPayload = {
+  event: DocumentEvent
+  context: FunctionContext | ScheduledFunctionContext | SyncTagInvalidateContext
+}
+
+/**
+ * The definition of a function resource in our resource discovery table
+ */
+export type FunctionResource = {
+  logicalResourceId: string
+  physicalResourceId: string
+}
+
+type FunctionResourceKey = 'eventsourcemapping' | 'function' | 'parameter' | 'queue' | 'schedule' | 'subscription' | 'topic'
+
+export type FunctionResourceEnvelope = {
+  [K in FunctionResourceKey]-?: {[P in K]: FunctionResource} & {[P in Exclude<FunctionResourceKey, K>]?: FunctionResource}
+}[FunctionResourceKey]
