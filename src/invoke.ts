@@ -1,11 +1,11 @@
 import {Buffer} from 'node:buffer'
 import {env} from 'node:process'
-import awsLite from '@aws-lite/client'
+import type awsLite from '@aws-lite/client'
 import type {FunctionPayload, FunctionResourceEnvelope} from './types.js'
 
 const MAX_EVENT_SIZE_BYTES = 256 * 1024
 
-let awsPromise: ReturnType<typeof awsLite> | undefined
+let awsPromise: Promise<awsLite.AwsLiteClient> | undefined
 
 const PARTITION_KEY = 'arc-app-res'
 
@@ -14,9 +14,12 @@ const PARTITION_KEY = 'arc-app-res'
  */
 function getAwsLite() {
   if (!awsPromise) {
-    awsPromise = awsLite({
-      plugins: [import('@aws-lite/dynamodb'), import('@aws-lite/lambda'), import('@aws-lite/sns'), import('@aws-lite/sqs')],
-    }).catch((err) => {
+    awsPromise = (async () => {
+      const {default: awsLite} = await import('@aws-lite/client')
+      return awsLite({
+        plugins: [import('@aws-lite/dynamodb'), import('@aws-lite/lambda'), import('@aws-lite/sns'), import('@aws-lite/sqs')],
+      })
+    })().catch((err) => {
       awsPromise = undefined
       throw err
     })
