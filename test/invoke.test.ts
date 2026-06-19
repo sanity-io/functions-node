@@ -1,8 +1,10 @@
 import awsLite from '@aws-lite/client'
 import {beforeEach, describe, expect, test} from 'vitest'
+import type {ResourcesApi} from '../src'
 import {invoke} from '../src/invoke.js'
 
-const context = {}
+const resources = {} as ResourcesApi
+const context = {resources}
 
 beforeEach(() => awsLite.testing.reset())
 

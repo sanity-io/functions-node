@@ -133,6 +133,8 @@ export interface SyncTagInvalidateContext extends Omit<FunctionContext, 'clientO
      */
     token?: string
   }
+  /** Resource interface that allows access to Blueprint Resources */
+  resources: ResourcesApi
 }
 /**
  * A function handler for a sync-tag-invalidate event.
