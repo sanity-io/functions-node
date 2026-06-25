@@ -1,4 +1,9 @@
 /**
+ * Callback provided by Sanity CLI when doing local development
+ */
+export type InvokeCallback = (name: string, payload: FunctionPayload) => Promise<void>
+
+/**
  * The context object passed to the function handler.
  */
 export interface FunctionContext {
@@ -16,6 +21,7 @@ export interface FunctionContext {
    * Otherwise, the property is not set.
    */
   local?: boolean
+  invoke?: InvokeCallback
   /**
    * Options that can be passed to a `@sanity/client` constructor to configure it
    * against the project and dataset which triggered the event. Note that you should
@@ -50,6 +56,7 @@ export interface ScheduledFunctionContext {
    * Otherwise, the property is not set.
    */
   local?: boolean
+  invoke?: InvokeCallback
   /**
    * Options that can be passed to a `@sanity/client` constructor to configure it
    * against the project and dataset which triggered the event. Note that you should

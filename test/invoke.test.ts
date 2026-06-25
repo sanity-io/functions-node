@@ -1,5 +1,5 @@
 import awsLite from '@aws-lite/client'
-import {beforeEach, describe, expect, test} from 'vitest'
+import {beforeEach, describe, expect, test, vi} from 'vitest'
 import type {ResourcesApi} from '../src'
 import {invoke} from '../src/invoke.js'
 
@@ -49,6 +49,14 @@ describe('invoke', () => {
     const {request} = awsLite.testing.getLastRequest('Lambda.Invoke')
     expect(request.FunctionName).toBe('arn:lambda:my-fn')
     expect(request.Payload).toEqual(payload)
+  })
+
+  test('invoke calls local function', async () => {
+    const localInvoke = vi.fn()
+    const payload = {event: {data: {hello: 'world'}}, context: {...context, local: true, invoke: localInvoke}}
+    await invoke('my-fn', payload)
+
+    expect(localInvoke).toHaveBeenCalledWith('my-fn', payload)
   })
 
   test('invoke throws when resource envelope has no invokeable target', async () => {

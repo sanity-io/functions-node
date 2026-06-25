@@ -57,6 +57,15 @@ export async function invoke(name: string, payload: FunctionPayload) {
     throw new Error(`Payload exceeds maximum size of ${MAX_EVENT_SIZE_BYTES / 1024}KB`)
   }
 
+  // Local invoke path for Sanity CLI
+  if (payload?.context?.local) {
+    if (!payload?.context?.invoke) {
+      throw new Error(`No local invoke handler configured for function: ${name}`)
+    }
+    await payload.context.invoke(name, payload)
+    return
+  }
+
   const aws = await getAwsLite()
   if (!aws) throw new Error(`Unable to invoke function: ${name}`)
 
