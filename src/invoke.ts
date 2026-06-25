@@ -62,7 +62,7 @@ export async function invoke(name: string, payload: FunctionPayload) {
     if (!payload?.context?.invoke) {
       throw new Error(`No local invoke handler configured for function: ${name}`)
     }
-    await payload.context.invoke(name, payload)
+    payload.context.invoke(name, payload)
     return
   }
 
