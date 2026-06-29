@@ -4,6 +4,8 @@ import {
   type DocumentEvent,
   type DocumentEventHandler,
   documentEventHandler,
+  type EventHandler,
+  eventHandler,
   type FunctionContext,
   type ResourcesApi,
   type ScheduledEventHandler,
@@ -34,20 +36,35 @@ const mockResourcesApi = (resources: BlueprintResource[] = []): ResourcesApi => 
   }) as unknown as ResourcesApi
 }
 
+const documentContext: FunctionContext = {
+  eventResourceId: 'abc123.xyz789',
+  eventResourceType: 'dataset',
+  functionResourceId: 'abc123',
+  functionResourceType: 'project',
+  clientOptions: {projectId: 'abc123', dataset: 'xyz789', token: 'sk_some-token'},
+  resources: mockResourcesApi(),
+}
+
+const scheduledContext: ScheduledFunctionContext = {
+  local: true,
+  resources: mockResourcesApi(),
+}
+
+const syncTagContext: SyncTagInvalidateContext = {
+  callbackToken: 'supersecret',
+  eventResourceId: 'abc123.xyz789',
+  eventResourceType: 'dataset',
+  functionResourceId: 'abc123',
+  functionResourceType: 'project',
+  clientOptions: {apiHost: 'api.sanity.io', projectId: 'abc123', dataset: 'xyz789'},
+  resources: mockResourcesApi(),
+}
+
+const documentEvent: DocumentEvent = {data: {_id: 'docId', _type: 'docType'}}
+const syncTagEvent: SyncTagInvalidateEvent = {data: {syncTags: ['abc:123', 'def:456']}}
+const done: SyncTagInvalidateCallback = async (_syncTags) => new Response()
+
 describe('documentEventHandler', () => {
-  const context: FunctionContext = {
-    eventResourceId: 'abc123.xyz789',
-    eventResourceType: 'dataset',
-    functionResourceId: 'abc123',
-    functionResourceType: 'project',
-    clientOptions: {projectId: 'abc123', dataset: 'xyz789', token: 'sk_some-token'},
-    resources: mockResourcesApi(),
-  }
-
-  const event: DocumentEvent = {
-    data: {_id: 'docId', _type: 'docType'},
-  }
-
   test('has correct type signature', () => {
     expectTypeOf(documentEventHandler).toBeFunction()
     expectTypeOf(documentEventHandler).parameter(0).toExtend<DocumentEventHandler>()
@@ -61,12 +78,12 @@ describe('documentEventHandler', () => {
     const handler = documentEventHandler((envelope) => {
       expectTypeOf(envelope.context).toEqualTypeOf<FunctionContext>()
       expectTypeOf(envelope.event).toEqualTypeOf<DocumentEvent>()
-      expect(envelope.context).toEqual(context)
-      expect(envelope.event).toEqual(event)
+      expect(envelope.context).toEqual(documentContext)
+      expect(envelope.event).toEqual(documentEvent)
       expectTypeOf(envelope.event.data).toBeAny()
     })
 
-    handler({context, event})
+    handler({context: documentContext, event: documentEvent})
   })
 
   test('can pass data type as generic', () => {
@@ -75,7 +92,7 @@ describe('documentEventHandler', () => {
       expect(envelope.event.data.foo).toBe('bar')
     })
 
-    handler({context, event: {data: {foo: 'bar'}}})
+    handler({context: documentContext, event: {data: {foo: 'bar'}}})
 
     const unknownHandler = documentEventHandler<unknown>((envelope) => {
       expectTypeOf(envelope.event.data).toEqualTypeOf<unknown>()
@@ -84,16 +101,11 @@ describe('documentEventHandler', () => {
       expect(envelope.event.data.foo).toBe('bar')
     })
 
-    unknownHandler({context, event})
+    unknownHandler({context: documentContext, event: documentEvent})
   })
 })
 
 describe('scheduledEventHandler', () => {
-  const context: ScheduledFunctionContext = {
-    local: true,
-    resources: mockResourcesApi(),
-  }
-
   test('has correct type signature', () => {
     expectTypeOf(scheduledEventHandler).toBeFunction()
     expectTypeOf(scheduledEventHandler).parameter(0).toExtend<ScheduledEventHandler>()
@@ -106,10 +118,10 @@ describe('scheduledEventHandler', () => {
   test('handler envelope has correct types', () => {
     const handler = scheduledEventHandler((envelope) => {
       expectTypeOf(envelope.context).toEqualTypeOf<ScheduledFunctionContext>()
-      expect(envelope.context).toEqual(context)
+      expect(envelope.context).toEqual(scheduledContext)
     })
 
-    handler({context})
+    handler({context: scheduledContext})
   })
 
   test('runs a handler', async () => {
@@ -117,27 +129,11 @@ describe('scheduledEventHandler', () => {
       return Promise.resolve()
     }
 
-    await expect(handler({context})).resolves.toBeUndefined()
+    await expect(handler({context: scheduledContext})).resolves.toBeUndefined()
   })
 })
 
 describe('syncTagInvalidateEventHandler', () => {
-  const context: SyncTagInvalidateContext = {
-    callbackToken: 'supersecret',
-    eventResourceId: 'abc123.xyz789',
-    eventResourceType: 'dataset',
-    functionResourceId: 'abc123',
-    functionResourceType: 'project',
-    clientOptions: {apiHost: 'api.sanity.io', projectId: 'abc123', dataset: 'xyz789'},
-    resources: mockResourcesApi(),
-  }
-
-  const event: SyncTagInvalidateEvent = {
-    data: {syncTags: ['abc:123', 'def:456']},
-  }
-
-  const done: SyncTagInvalidateCallback = async (_syncTags) => new Response()
-
   test('has correct type signature', () => {
     expectTypeOf(syncTagInvalidateEventHandler).toBeFunction()
     expectTypeOf(syncTagInvalidateEventHandler).parameter(0).toExtend<SyncTagInvalidateEventHandler>()
@@ -152,11 +148,59 @@ describe('syncTagInvalidateEventHandler', () => {
       expectTypeOf(envelope.context).toEqualTypeOf<SyncTagInvalidateContext>()
       expectTypeOf(envelope.event).toEqualTypeOf<SyncTagInvalidateEvent>()
       expectTypeOf(envelope.done).toEqualTypeOf<SyncTagInvalidateCallback>()
-      expect(envelope.context).toEqual(context)
-      expect(envelope.event).toEqual(event)
+      expect(envelope.context).toEqual(syncTagContext)
+      expect(envelope.event).toEqual(syncTagEvent)
       expectTypeOf(envelope.event.data.syncTags).toBeArray()
     })
 
-    handler({context, done, event})
+    handler({context: syncTagContext, done, event: syncTagEvent})
+  })
+})
+
+describe('eventHandler', () => {
+  test('has correct type signature', () => {
+    expectTypeOf(eventHandler).toBeFunction()
+    expectTypeOf(eventHandler).parameter(0).toExtend<EventHandler>()
+    expectTypeOf(eventHandler).returns.toExtend<EventHandler>()
+
+    // @ts-expect-error should be a function
+    assertType(eventHandler('foo'))
+  })
+
+  test('accepts and narrows every payload variant', () => {
+    const handler = eventHandler((envelope) => {
+      if ('done' in envelope) {
+        // sync-tag-invalidate payload
+        expectTypeOf(envelope.context).toEqualTypeOf<SyncTagInvalidateContext>()
+        expectTypeOf(envelope.event).toEqualTypeOf<SyncTagInvalidateEvent>()
+        expectTypeOf(envelope.done).toEqualTypeOf<SyncTagInvalidateCallback>()
+        expectTypeOf(envelope.event.data.syncTags).toBeArray()
+      } else if ('event' in envelope) {
+        // document payload
+        expectTypeOf(envelope.context).toEqualTypeOf<FunctionContext>()
+        expectTypeOf(envelope.event).toEqualTypeOf<DocumentEvent>()
+        expectTypeOf(envelope.event.data).toBeAny()
+      } else {
+        // scheduled payload
+        expectTypeOf(envelope.context).toEqualTypeOf<ScheduledFunctionContext>()
+        // @ts-expect-error scheduled payloads have no event
+        assertType(envelope.event)
+      }
+    })
+
+    handler({context: documentContext, event: documentEvent})
+    handler({context: scheduledContext})
+    handler({context: syncTagContext, event: syncTagEvent, done})
+  })
+
+  test('can pass data type as generic for the document payload', () => {
+    const handler = eventHandler<{foo: string}>((envelope) => {
+      if ('event' in envelope && !('done' in envelope)) {
+        expectTypeOf(envelope.event.data).toEqualTypeOf<{foo: string}>()
+        expect(envelope.event.data.foo).toBe('bar')
+      }
+    })
+
+    handler({context: documentContext, event: {data: {foo: 'bar'}}})
   })
 })
