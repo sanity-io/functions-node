@@ -1,5 +1,20 @@
 # Changelog
 
+## [1.4.0](https://github.com/sanity-io/functions-node/compare/v1.3.1...v1.4.0) (2026-06-29)
+
+
+### Features
+
+* Add `context.resources` to types ([#26](https://github.com/sanity-io/functions-node/issues/26)) ([42fb063](https://github.com/sanity-io/functions-node/commit/42fb0639e5cd1221b53431937379ec6193370954))
+* add invoke method ([#28](https://github.com/sanity-io/functions-node/issues/28)) ([9c1bbcb](https://github.com/sanity-io/functions-node/commit/9c1bbcb44298c2ecf70de81d3c235399ee492662))
+* add local invoke path ([#29](https://github.com/sanity-io/functions-node/issues/29)) ([90de226](https://github.com/sanity-io/functions-node/commit/90de2263e440c22a26ec75aa823ef4aa5fb4742b))
+
+
+### Bug Fixes
+
+* generic event handler ([#30](https://github.com/sanity-io/functions-node/issues/30)) ([4712faf](https://github.com/sanity-io/functions-node/commit/4712fafc6c1381e2b8f169cb7eea417803c16254))
+* Moar generic EventHandler ([#31](https://github.com/sanity-io/functions-node/issues/31)) ([a6bc472](https://github.com/sanity-io/functions-node/commit/a6bc47224c8bdc3766ca1562d84dbcd062ca6c28))
+
 ## [1.3.1](https://github.com/sanity-io/functions-node/compare/v1.3.0...v1.3.1) (2026-04-13)
 
 
