@@ -7,6 +7,7 @@ import {
   type EventHandler,
   eventHandler,
   type FunctionContext,
+  type GenericContext,
   type ResourcesApi,
   type ScheduledEventHandler,
   type ScheduledFunctionContext,
@@ -167,38 +168,23 @@ describe('eventHandler', () => {
     assertType(eventHandler('foo'))
   })
 
-  test('accepts and narrows every payload variant', () => {
+  test('has a permissive envelope that needs no narrowing', () => {
     const handler = eventHandler((envelope) => {
-      if ('done' in envelope) {
-        // sync-tag-invalidate payload
-        expectTypeOf(envelope.context).toEqualTypeOf<SyncTagInvalidateContext>()
-        expectTypeOf(envelope.event).toEqualTypeOf<SyncTagInvalidateEvent>()
-        expectTypeOf(envelope.done).toEqualTypeOf<SyncTagInvalidateCallback>()
-        expectTypeOf(envelope.event.data.syncTags).toBeArray()
-      } else if ('event' in envelope) {
-        // document payload
-        expectTypeOf(envelope.context).toEqualTypeOf<FunctionContext>()
-        expectTypeOf(envelope.event).toEqualTypeOf<DocumentEvent>()
-        expectTypeOf(envelope.event.data).toBeAny()
-      } else {
-        // scheduled payload
-        expectTypeOf(envelope.context).toEqualTypeOf<ScheduledFunctionContext>()
-        // @ts-expect-error scheduled payloads have no event
-        assertType(envelope.event)
-      }
+      // `context`/`event` accept any supported shape, `done` is optional
+      expectTypeOf(envelope.context).toEqualTypeOf<GenericContext>()
+      expectTypeOf(envelope.event).toEqualTypeOf<DocumentEvent | SyncTagInvalidateEvent>()
+      expectTypeOf(envelope.done).toEqualTypeOf<SyncTagInvalidateCallback | undefined>()
+      // event data is `any` by default, so it can be accessed without a guard
+      expectTypeOf(envelope.event.data).toBeAny()
     })
 
     handler({context: documentContext, event: documentEvent})
-    handler({context: scheduledContext})
     handler({context: syncTagContext, event: syncTagEvent, done})
   })
 
   test('can pass data type as generic for the document payload', () => {
     const handler = eventHandler<{foo: string}>((envelope) => {
-      if ('event' in envelope && !('done' in envelope)) {
-        expectTypeOf(envelope.event.data).toEqualTypeOf<{foo: string}>()
-        expect(envelope.event.data.foo).toBe('bar')
-      }
+      expectTypeOf(envelope.event).toEqualTypeOf<DocumentEvent<{foo: string}> | SyncTagInvalidateEvent>()
     })
 
     handler({context: documentContext, event: {data: {foo: 'bar'}}})

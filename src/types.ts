@@ -130,17 +130,16 @@ export type GenericEvent = DocumentEvent | SyncTagInvalidateEvent
 /**
  * A generic function handler that can receive the payload of any function type.
  *
- * The envelope is a discriminated union of every supported payload shape, so a
- * single handler can be registered regardless of the event source. Narrow on the
- * presence of `event`/`done` (or the shape of `context`) to access the fields
- * specific to each event type.
+ * The envelope is intentionally permissive so a single handler can be registered
+ * regardless of the event source without narrowing: `context` is any supported
+ * context, `event` is any supported event, and `done` is optional (present only
+ * for sync-tag-invalidate events).
  */
-export type EventHandler<IData = any> = (
-  envelope:
-    | {context: FunctionContext; event: DocumentEvent<IData>}
-    | {context: ScheduledFunctionContext}
-    | {context: SyncTagInvalidateContext; event: SyncTagInvalidateEvent; done: SyncTagInvalidateCallback},
-) => void | Promise<void>
+export type EventHandler<IData = any> = (envelope: {
+  context: GenericContext
+  event: DocumentEvent<IData> | SyncTagInvalidateEvent
+  done?: SyncTagInvalidateCallback
+}) => void | Promise<void>
 
 /**
  * A callback function to invoke once a sync-tag-invalidate event has been processed. Signals to Sanity that sync tag invalidation has completed.
