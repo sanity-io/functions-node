@@ -2,6 +2,8 @@ import {describe, expect, test} from 'vitest'
 import {
   type DocumentEventHandler,
   documentEventHandler,
+  type EventHandler,
+  eventHandler,
   type ScheduledEventHandler,
   type SyncTagInvalidateEventHandler,
   scheduledEventHandler,
@@ -58,6 +60,24 @@ describe('syncTagEventHandler', () => {
     expect(() => {
       // @ts-expect-error Intentionally wrong type
       syncTagInvalidateEventHandler('foo')
+    }).toThrowErrorMatchingInlineSnapshot(`[TypeError: \`handler\` must be a function]`)
+  })
+})
+
+describe('eventHandler', () => {
+  test('passes through handler function verbatim', () => {
+    const handler = (() => {
+      console.log('Event received:')
+    }) satisfies EventHandler
+
+    const result = eventHandler(handler)
+    expect(result).toBe(handler)
+  })
+
+  test('throws error if handler is not a function', () => {
+    expect(() => {
+      // @ts-expect-error Intentionally wrong type
+      eventHandler('foo')
     }).toThrowErrorMatchingInlineSnapshot(`[TypeError: \`handler\` must be a function]`)
   })
 })
