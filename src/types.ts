@@ -221,3 +221,27 @@ type FunctionResourceKey = 'eventsourcemapping' | 'function' | 'parameter' | 'qu
 export type FunctionResourceEnvelope = {
   [K in FunctionResourceKey]-?: {[P in K]: FunctionResource} & {[P in Exclude<FunctionResourceKey, K>]?: FunctionResource}
 }[FunctionResourceKey]
+
+/**
+ * when calling step.*() from a workflow.
+ */
+export interface WorkflowSteps {
+  run<T>(name: string, fn: () => T | Promise<T>): Promise<T>
+  invoke<T>(name: string, target: string, input?: unknown): Promise<T>
+  // @todo: other methods wanted for durables
+}
+
+
+export interface WorkflowContext extends FunctionContext {
+  /**
+   * uniqueId for a workflow run.
+   */
+  runId: string
+}
+
+export type WorkflowHandler<IData = any> = (envelope: {
+  context: WorkflowContext
+  event: DocumentEvent<IData>
+  step: WorkflowSteps
+}) => unknown | Promise<unknown>
+
