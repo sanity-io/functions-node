@@ -223,18 +223,33 @@ export type FunctionResourceEnvelope = {
 }[FunctionResourceKey]
 
 /**
- * when calling step.*() from a workflow.
+ * The interface for workflow steps, which allows for running named steps.
  */
 export interface WorkflowSteps {
+  /**
+   * Runs a named step. Its result is recorded, so if the workflow re-runs the step
+   * is not executed again. Failures are retried on their own.
+   * similar to ctx.step
+   * @param name - Step name
+   * @param fn - function(s) being executed
+   * @returns The value returned by the executed function
+   */
   run<T>(name: string, fn: () => T | Promise<T>): Promise<T>
-  invoke<T>(name: string, target: string, input?: unknown): Promise<T>
+  /**
+   * Calls another function and awaits its result.
+   * similar to ctx.invoke()
+   * @param name - Name of the function being called
+   * @param input - Data passed to the called function
+   * @returns The value returned by the called function
+   */
+  call<T>(name: string, input?: unknown): Promise<T>
   // @todo: other methods wanted for durables
 }
 
 
 export interface WorkflowContext extends FunctionContext {
   /**
-   * uniqueId for a workflow run.
+   * uniqueId for a workflow run
    */
   runId: string
 }
