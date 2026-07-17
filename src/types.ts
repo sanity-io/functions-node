@@ -225,7 +225,7 @@ export type FunctionResourceEnvelope = {
 /**
  * The interface for workflow steps, which allows for running named steps.
  */
-export interface WorkflowSteps {
+export interface PipelineSteps {
   /**
    * Runs a named step. Its result is recorded, so if the workflow re-runs the step
    * is not executed again. Failures are retried on their own.
@@ -247,16 +247,16 @@ export interface WorkflowSteps {
 }
 
 
-export interface WorkflowContext extends FunctionContext {
+export interface PipelineContext extends FunctionContext {
   /**
    * uniqueId for a workflow run
    */
   runId: string
 }
 
-export type WorkflowHandler<IData = any> = (envelope: {
-  context: WorkflowContext
+export type PipelineHandler<IData = any> = (envelope: {
+  context: PipelineContext
   event: DocumentEvent<IData>
-  step: WorkflowSteps
+  step: PipelineSteps
 }) => unknown | Promise<unknown>
 

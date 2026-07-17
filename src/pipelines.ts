@@ -1,15 +1,15 @@
-import type { WorkflowHandler } from "./types";
+import type { PipelineHandler } from "./types";
 
 /**
  *
  * @param {TConfig} config
- * @param {WorkflowHandler<IData>} handler
- * @returns {WorkflowHandler<IData> & {config: TConfig}}
+ * @param {PipelineHandler<IData>} handler
+ * @returns {PipelineHandler<IData> & {config: TConfig}}
  */
-export function createWorkflow<TConfig extends {name: string}, IData = any>(
+export function createPipeline<TConfig extends {name: string}, IData = any>(
   config: TConfig,
-  handler: WorkflowHandler<IData>,
-): WorkflowHandler<IData> & {config: TConfig} {
+  handler: PipelineHandler<IData>,
+): PipelineHandler<IData> & {config: TConfig} {
   if (config !== null)  {
     if (typeof config !== 'object') throw new TypeError('`config` must be an object')
     if (typeof config.name !== 'string') throw new TypeError('`config.name` must be a string')
@@ -19,4 +19,4 @@ export function createWorkflow<TConfig extends {name: string}, IData = any>(
   return Object.assign(handler, {config})
 }
 
-export const workflow = {createWorkflow}
+export const pipeline = {createPipeline}
