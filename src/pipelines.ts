@@ -1,4 +1,4 @@
-import type { PipelineHandler } from "./types";
+import type {PipelineHandler} from './types'
 
 /**
  *
@@ -10,7 +10,7 @@ export function createPipeline<TConfig extends {name: string}, IData = any>(
   config: TConfig,
   handler: PipelineHandler<IData>,
 ): PipelineHandler<IData> & {config: TConfig} {
-  if (config !== null)  {
+  if (config !== null) {
     if (typeof config !== 'object') throw new TypeError('`config` must be an object')
     if (typeof config.name !== 'string') throw new TypeError('`config.name` must be a string')
   }

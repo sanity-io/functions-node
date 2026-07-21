@@ -246,7 +246,6 @@ export interface PipelineSteps {
   // @todo: other methods wanted for durables
 }
 
-
 export interface PipelineContext extends FunctionContext {
   /**
    * uniqueId for a workflow run
@@ -259,4 +258,3 @@ export type PipelineHandler<IData = any> = (envelope: {
   event: DocumentEvent<IData>
   step: PipelineSteps
 }) => unknown | Promise<unknown>
-
