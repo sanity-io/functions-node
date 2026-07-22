@@ -254,11 +254,11 @@ export interface PipelineSteps {
   delegate<T>(name: string, input?: unknown): Promise<T>
 
   /**
-   * Waits for a named step to complete. If the step has already completed, it returns the result immediately.
-   * similar to ctx.waitForCondition()
+   * Waits for an external callback
+   * similar to ctx.waitForCallback()
    * @remarks can not be nested inside another step
    * @param name - Step name
-   * @param fn - Function to check to wait on condition
+   * @param fn -Receives the generated callbackId and should return a delivered promise
    * @returns The value returned by the executed function
    */
   waitForCallback<T>(name: string, fn: (callbackId: string) => Promise<void>): Promise<T>
@@ -269,8 +269,8 @@ export interface PipelineSteps {
  * @alpha Using pipeline functions is considered experimental and may change in the future.
  * @hidden
  */
-export type PipelineHandler<TReturn = unknown> = (envelope: {
+export type PipelineHandler = (envelope: {
   context: FunctionContext
   event?: GenericEvent
   step: PipelineSteps
-}) => TReturn | Promise<TReturn>
+}) => unknown | Promise<unknown>
