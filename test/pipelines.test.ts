@@ -12,6 +12,15 @@ describe('createPipeline', () => {
     expect(result.config).toBe(config)
   })
 
+  test('returns handler with no config', () => {
+    const handler: PipelineHandler = () => {}
+
+    const result = createPipeline(handler)
+
+    expect(result).toBe(handler)
+    expect(result.config).toBeUndefined()
+  })
+
   test('throws if config is not an object', () => {
     expect(() => {
       // @ts-expect-error Intentionally wrong type
@@ -24,6 +33,12 @@ describe('createPipeline', () => {
       // @ts-expect-error Intentionally wrong type
       createPipeline({name: 123}, () => {})
     }).toThrow('`config.name` must be a string')
+  })
+
+  test('throws if config.event is not an object', () => {
+    expect(() => {
+      createPipeline({name: 'test', event: 'not-an-object'}, () => {})
+    }).toThrow('`event` must be an object')
   })
 
   test('throws if handler is not a function', () => {

@@ -16,6 +16,10 @@ export interface FunctionContext {
   /** The resource ID of the function container; resource ID that houses the function. */
   functionResourceId: string
   /**
+   * uniqueId for a pipeline run
+   */
+  runId?: string
+  /**
    * `local` is set to `true` when testing your function locally.
    * i.e. `sanity function test func-name`
    * Otherwise, the property is not set.
@@ -224,12 +228,16 @@ export type FunctionResourceEnvelope = {
 
 /**
  * The interface for workflow steps, which allows for running named steps.
+ * @alpha Using pipeline functions is considered experimental and may change in the future.
+ * @public
+ * @hidden
  */
 export interface PipelineSteps {
   /**
    * Runs a named step. Its result is recorded, so if the workflow re-runs the step
    * is not executed again. Failures are retried on their own.
-   * similar to ctx.step
+   * similar to ctx.step()
+   * @remarks can not be nested inside another step
    * @param name - Step name
    * @param fn - function(s) being executed
    * @returns The value returned by the executed function
@@ -238,23 +246,31 @@ export interface PipelineSteps {
   /**
    * Calls another function and awaits its result.
    * similar to ctx.invoke()
-   * @param name - Name of the function being called
+   * @remarks can not be nested inside another step
+   * @param name - Step name
    * @param input - Data passed to the called function
    * @returns The value returned by the called function
    */
-  call<T>(name: string, input?: unknown): Promise<T>
+  delegate<T>(name: string, input?: unknown): Promise<T>
+
+  /**
+   * Waits for a named step to complete. If the step has already completed, it returns the result immediately.
+   * similar to ctx.waitForCondition()
+   * @remarks can not be nested inside another step
+   * @param name - Step name
+   * @param fn - Function to check to wait on condition
+   * @returns The value returned by the executed function
+   */
+  waitForCallback<T>(name: string, fn: (callbackId: string) => Promise<void>): Promise<T>
   // @todo: other methods wanted for durables
 }
 
-export interface PipelineContext extends FunctionContext {
-  /**
-   * uniqueId for a workflow run
-   */
-  runId: string
-}
-
-export type PipelineHandler<IData = any> = (envelope: {
-  context: PipelineContext
-  event: DocumentEvent<IData>
+/**
+ * @alpha Using pipeline functions is considered experimental and may change in the future.
+ * @hidden
+ */
+export type PipelineHandler<TReturn = unknown> = (envelope: {
+  context: FunctionContext
+  event?: GenericEvent
   step: PipelineSteps
-}) => unknown | Promise<unknown>
+}) => TReturn | Promise<TReturn>
