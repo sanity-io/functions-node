@@ -227,26 +227,27 @@ export type FunctionResourceEnvelope = {
 }[FunctionResourceKey]
 
 /**
- * The interface for workflow steps, which allows for running named steps.
+ * The interface defining the operations available to a pipeline function.
+ * These operations are steps that delegate to other functions, and wait for external callbacks.
  * @alpha Using pipeline functions is considered experimental and may change in the future.
  * @public
  * @hidden
  */
-export interface PipelineSteps {
+export interface PipelineOperations {
   /**
    * Runs a named step. Its result is recorded, so if the workflow re-runs the step
    * is not executed again. Failures are retried on their own.
    * similar to ctx.step()
-   * @remarks can not be nested inside another step
+   * @remarks cannot be nested inside another step
    * @param name - Step name
-   * @param fn - function(s) being executed
+   * @param fn - function being executed
    * @returns The value returned by the executed function
    */
   run<T>(name: string, fn: () => T | Promise<T>): Promise<T>
   /**
    * Calls another function and awaits its result.
    * similar to ctx.invoke()
-   * @remarks can not be nested inside another step
+   * @remarks cannot be nested inside another step
    * @param name - Step name
    * @param input - Data passed to the called function
    * @returns The value returned by the called function
@@ -256,9 +257,9 @@ export interface PipelineSteps {
   /**
    * Waits for an external callback
    * similar to ctx.waitForCallback()
-   * @remarks can not be nested inside another step
+   * @remarks cannot be nested inside another step
    * @param name - Step name
-   * @param fn -Receives the generated callbackId and should return a delivered promise
+   * @param fn -Receives the generated callbackId and returns a delivered promise
    * @returns The value returned by the executed function
    */
   waitForCallback<T>(name: string, fn: (callbackId: string) => Promise<void>): Promise<T>
@@ -272,5 +273,5 @@ export interface PipelineSteps {
 export type PipelineHandler = (envelope: {
   context: FunctionContext
   event?: GenericEvent
-  step: PipelineSteps
+  step: PipelineOperations
 }) => unknown | Promise<unknown>
