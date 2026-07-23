@@ -21,6 +21,13 @@ describe('createPipeline', () => {
     expect(result.config).toBeUndefined()
   })
 
+  test('throws if config is `undefined`', () => {
+    expect(() => {
+      // @ts-expect-error Intentionally wrong type
+      createPipeline(undefined, () => {})
+    }).toThrowErrorMatchingInlineSnapshot(`[TypeError: \`config\` must be defined]`)
+  })
+
   test('throws if config is not an object', () => {
     expect(() => {
       // @ts-expect-error Intentionally wrong type
@@ -39,6 +46,12 @@ describe('createPipeline', () => {
     expect(() => {
       createPipeline({name: 'test', event: 'not-an-object'}, () => {})
     }).toThrow('`event` must be an object')
+  })
+
+  test('throws if config.event.type is not one of the allowed types', () => {
+    expect(() => {
+      createPipeline({name: 'test', event: {type: 'media'}}, () => {})
+    }).toThrow('`event.type` must be one of: document, media-library, cron, sync-tag-invalidate')
   })
 
   test('throws if handler is not a function', () => {
