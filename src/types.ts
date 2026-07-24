@@ -16,6 +16,10 @@ export interface FunctionContext {
   /** The resource ID of the function container; resource ID that houses the function. */
   functionResourceId: string
   /**
+   * uniqueId for a pipeline run
+   */
+  runId?: string
+  /**
    * `local` is set to `true` when testing your function locally.
    * i.e. `sanity function test func-name`
    * Otherwise, the property is not set.
@@ -221,3 +225,53 @@ type FunctionResourceKey = 'eventsourcemapping' | 'function' | 'parameter' | 'qu
 export type FunctionResourceEnvelope = {
   [K in FunctionResourceKey]-?: {[P in K]: FunctionResource} & {[P in Exclude<FunctionResourceKey, K>]?: FunctionResource}
 }[FunctionResourceKey]
+
+/**
+ * The interface defining the operations available to a pipeline function.
+ * These operations are steps that delegate to other functions, and wait for external callbacks.
+ * @alpha Using pipeline functions is considered experimental and may change in the future.
+ * @public
+ * @hidden
+ */
+export interface PipelineOperations {
+  /**
+   * Runs a named step. Its result is recorded, so if the workflow re-runs the step
+   * is not executed again. Failures are retried on their own.
+   * similar to ctx.step()
+   * @remarks cannot be nested inside another step
+   * @param name - Step name
+   * @param fn - function being executed
+   * @returns The value returned by the executed function
+   */
+  run<T>(name: string, fn: () => T | Promise<T>): Promise<T>
+  /**
+   * Calls another function and awaits its result.
+   * similar to ctx.invoke()
+   * @remarks cannot be nested inside another step
+   * @param name - Step name
+   * @param input - Data passed to the called function
+   * @returns The value returned by the called function
+   */
+  delegate<T>(name: string, input?: unknown): Promise<T>
+
+  /**
+   * Waits for an external callback
+   * similar to ctx.waitForCallback()
+   * @remarks cannot be nested inside another step
+   * @param name - Step name
+   * @param fn -Receives the generated callbackId and returns a delivered promise
+   * @returns The value returned by the executed function
+   */
+  waitForCallback<T>(name: string, fn: (callbackId: string) => Promise<void>): Promise<T>
+  // @todo: other methods wanted for durables
+}
+
+/**
+ * @alpha Using pipeline functions is considered experimental and may change in the future.
+ * @hidden
+ */
+export type PipelineHandler = (envelope: {
+  context: FunctionContext
+  event?: GenericEvent
+  step: PipelineOperations
+}) => unknown | Promise<unknown>
