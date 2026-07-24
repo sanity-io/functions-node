@@ -48,6 +48,22 @@ describe('invoke', () => {
 
     const {request} = awsLite.testing.getLastRequest('Lambda.Invoke')
     expect(request.FunctionName).toBe('arn:lambda:my-fn')
+    expect(request.InvocationType).toBe('Event')
+    expect(request.Payload).toEqual(payload)
+  })
+
+  test('invoke calls Lambda function synchronously', async () => {
+    awsLite.testing.mock('DynamoDB.GetItem', {
+      Item: {resources: {function: {logicalResourceId: 'foo', physicalResourceId: 'arn:lambda:my-fn'}}},
+    })
+    awsLite.testing.mock('Lambda.Invoke', {StatusCode: 200})
+
+    const payload = {event: {data: {hello: 'world'}}, context}
+    await invoke('my-fn', payload, {sync: true})
+
+    const {request} = awsLite.testing.getLastRequest('Lambda.Invoke')
+    expect(request.FunctionName).toBe('arn:lambda:my-fn')
+    expect(request.InvocationType).toBe('RequestResponse')
     expect(request.Payload).toEqual(payload)
   })
 
@@ -56,7 +72,29 @@ describe('invoke', () => {
     const payload = {event: {data: {hello: 'world'}}, context: {...context, local: true, invoke: localInvoke}}
     await invoke('my-fn', payload)
 
-    expect(localInvoke).toHaveBeenCalledWith('my-fn', payload)
+    expect(localInvoke).toHaveBeenCalledWith('my-fn', payload, undefined)
+  })
+
+  test('invoke forwards options to the local function', async () => {
+    const localInvoke = vi.fn()
+    const payload = {event: {data: {hello: 'world'}}, context: {...context, local: true, invoke: localInvoke}}
+    await invoke('my-fn', payload, {sync: true})
+
+    expect(localInvoke).toHaveBeenCalledWith('my-fn', payload, {sync: true})
+  })
+
+  test('invoke returns the local function result when invoked synchronously', async () => {
+    const localInvoke = vi.fn().mockResolvedValue({status: 'ok'})
+    const payload = {event: {data: {hello: 'world'}}, context: {...context, local: true, invoke: localInvoke}}
+
+    await expect(invoke('my-fn', payload, {sync: true})).resolves.toEqual({status: 'ok'})
+  })
+
+  test('invoke rejects when the local function rejects', async () => {
+    const localInvoke = vi.fn().mockRejectedValue(new Error('local handler blew up'))
+    const payload = {event: {data: {hello: 'world'}}, context: {...context, local: true, invoke: localInvoke}}
+
+    await expect(invoke('my-fn', payload, {sync: true})).rejects.toThrow('local handler blew up')
   })
 
   test('invoke throws when resource envelope has no invokeable target', async () => {
@@ -98,8 +136,14 @@ describe('invoke', () => {
 
   test('invoke throws when event payload exceeds 256KB', async () => {
     const event = {data: {blob: 'a'.repeat(256 * 1024)}}
-
     await expect(invoke('my-fn', {event, context})).rejects.toThrow('Payload exceeds maximum size of 256KB')
+    expect(awsLite.testing.getAllRequests('DynamoDB.GetItem')).toBeUndefined()
+  })
+
+  test('invoke throws when sync payload exceeds 6MB', async () => {
+    const event = {data: {blob: 'a'.repeat(6 * 1024 * 1024)}}
+
+    await expect(invoke('my-fn', {event, context}, {sync: true})).rejects.toThrow('Payload exceeds maximum size of 6MB')
     expect(awsLite.testing.getAllRequests('DynamoDB.GetItem')).toBeUndefined()
   })
 })
