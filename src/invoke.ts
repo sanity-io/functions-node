@@ -3,11 +3,6 @@ import {env} from 'node:process'
 import type awsLite from '@aws-lite/client'
 import type {FunctionPayload, FunctionResourceEnvelope, InvokeOptions} from './types.js'
 
-const MAX_EVENT_SIZE_BYTES = 256 * 1024
-const MAX_INVOKE_SIZE_BYTES = 6 * 1024 * 1024
-const ASYNC_INVOCATION = 'Event'
-const SYNC_INVOCATION = 'RequestResponse'
-
 let awsPromise: Promise<awsLite.AwsLiteClient> | undefined
 
 const PARTITION_KEY = 'arc-app-res'
@@ -94,7 +89,7 @@ export async function invoke(name: string, payload: FunctionPayload, options?: I
     const {Payload, FunctionError} = await aws.Lambda.Invoke({
       FunctionName: resource.function.physicalResourceId,
       Payload: payload,
-      InvocationType: SYNC_INVOCATION,
+      InvocationType: 'RequestResponse',
     })
     if (FunctionError) {
       const detail = typeof Payload === 'object' && Payload !== null ? (Payload as {errorMessage?: string}).errorMessage : undefined
@@ -103,8 +98,7 @@ export async function invoke(name: string, payload: FunctionPayload, options?: I
     return Payload
   }
 
-  // Async invocation by type. These deliberately return nothing: the underlying SNS/SQS/Lambda
-  // response objects are transport details and must not leak into this package's public types.
+  // Async invocation by type
   if (resource.topic) {
     await aws.SNS.Publish({
       TopicArn: resource.topic.physicalResourceId,
@@ -119,7 +113,7 @@ export async function invoke(name: string, payload: FunctionPayload, options?: I
     await aws.Lambda.Invoke({
       FunctionName: resource.function.physicalResourceId,
       Payload: payload,
-      InvocationType: ASYNC_INVOCATION,
+      InvocationType: 'Event',
     })
   } else {
     throw new Error(`No invokeable resource for function: ${name}`)
@@ -129,11 +123,11 @@ export async function invoke(name: string, payload: FunctionPayload, options?: I
 
 function checkPayloadSize(payload: string, sync: boolean) {
   if (sync) {
-    if (Buffer.byteLength(payload, 'utf8') > MAX_INVOKE_SIZE_BYTES) {
+    if (Buffer.byteLength(payload, 'utf8') > 6 * 1024 * 1024) {
       throw new Error(`Payload exceeds maximum size of 6MB`)
     }
   } else {
-    if (Buffer.byteLength(payload, 'utf8') > MAX_EVENT_SIZE_BYTES) {
+    if (Buffer.byteLength(payload, 'utf8') > 256 * 1024) {
       throw new Error(`Payload exceeds maximum size of 256KB`)
     }
   }
