@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.5.0](https://github.com/sanity-io/functions-node/compare/v1.4.0...v1.5.0) (2026-07-27)
+
+
+### Features
+
+* initial pipeline function shaping ([#32](https://github.com/sanity-io/functions-node/issues/32)) ([405a6b3](https://github.com/sanity-io/functions-node/commit/405a6b3e8e1e3e1e1fc25be3cf8e499a3a3bd57b))
+
+
+### Bug Fixes
+
+* Add sync invoke to the @sanity/functions invoke method ([#34](https://github.com/sanity-io/functions-node/issues/34)) ([1f9186f](https://github.com/sanity-io/functions-node/commit/1f9186f19b301ed09fa87a475b95cd546fee3c70))
+
 ## [1.4.0](https://github.com/sanity-io/functions-node/compare/v1.3.1...v1.4.0) (2026-06-29)
 
 
