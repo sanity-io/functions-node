@@ -1,7 +1,15 @@
 /**
  * Callback provided by Sanity CLI when doing local development
  */
-export type InvokeCallback = (name: string, payload: FunctionPayload) => Promise<void>
+export type InvokeCallback = <T = unknown>(name: string, payload: FunctionPayload, options?: InvokeOptions) => Promise<T>
+
+/**
+ * Options provided to invoke
+ */
+export type InvokeOptions = {
+  // Whether the function should be invoked synchronously
+  sync?: boolean
+}
 
 /**
  * The context object passed to the function handler.

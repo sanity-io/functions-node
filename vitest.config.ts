@@ -6,6 +6,9 @@ export default defineConfig({
     include: ['test/**/*.test.ts'],
     environment: 'node',
     setupFiles: ['./test/setup.ts'],
+    typecheck: {
+      tsconfig: './tsconfig.test.json',
+    },
 
     coverage: {
       reporter: ['text', 'json-summary', 'json'],

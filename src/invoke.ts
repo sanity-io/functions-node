@@ -1,9 +1,7 @@
 import {Buffer} from 'node:buffer'
 import {env} from 'node:process'
 import type awsLite from '@aws-lite/client'
-import type {FunctionPayload, FunctionResourceEnvelope} from './types.js'
-
-const MAX_EVENT_SIZE_BYTES = 256 * 1024
+import type {FunctionPayload, FunctionResourceEnvelope, InvokeOptions} from './types.js'
 
 let awsPromise: Promise<awsLite.AwsLiteClient> | undefined
 
@@ -48,22 +46,33 @@ async function getResource(name: string, aws: awsLite.AwsLiteClient): Promise<Fu
   return result.Item['resources'] as unknown as FunctionResourceEnvelope
 }
 
-export async function invoke(name: string, payload: FunctionPayload) {
+/**
+ * Invokes another Sanity Function.
+ *
+ * By default the invocation is async: the payload is handed off to the function's
+ * event source and nothing is returned. Pass `{sync: true}` to invoke the function and
+ * wait for its return value.
+ *
+ * @param name - Name of the function to invoke
+ * @param payload - The `{event, context}` envelope to deliver
+ * @param options - Set `sync: true` to wait for and return the function's result
+ */
+export async function invoke<T = unknown>(name: string, payload: FunctionPayload, options: InvokeOptions & {sync: true}): Promise<T>
+export async function invoke(name: string, payload: FunctionPayload, options?: InvokeOptions & {sync?: false}): Promise<void>
+export async function invoke<T = unknown>(name: string, payload: FunctionPayload, options?: InvokeOptions): Promise<T | undefined> {
   if (!name) throw new Error('Function name was not provided')
+  const sync = options?.sync ?? false
 
   const stringPayload = JSON.stringify(payload)
   // Check to make sure payload is not over the max we can handle
-  if (Buffer.byteLength(stringPayload, 'utf8') > MAX_EVENT_SIZE_BYTES) {
-    throw new Error(`Payload exceeds maximum size of ${MAX_EVENT_SIZE_BYTES / 1024}KB`)
-  }
+  checkPayloadSize(stringPayload, sync)
 
   // Local invoke path for Sanity CLI
   if (payload?.context?.local) {
     if (!payload?.context?.invoke) {
       throw new Error(`No local invoke handler configured for function: ${name}`)
     }
-    payload.context.invoke(name, payload)
-    return
+    return await payload.context.invoke(name, payload, options)
   }
 
   const aws = await getAwsLite()
@@ -72,7 +81,25 @@ export async function invoke(name: string, payload: FunctionPayload) {
   // Look up the function details
   const resource = await getResource(name, aws)
 
-  // Determine which method to invoke the function
+  // Synchronous invocation
+  if (sync === true) {
+    if (!resource.function) {
+      throw new Error(`Function ${name} cannot be invoked synchronously.`)
+    }
+    const {Payload, FunctionError} = await aws.Lambda.Invoke({
+      FunctionName: resource.function.physicalResourceId,
+      Payload: payload,
+      InvocationType: 'RequestResponse',
+    })
+    if (FunctionError) {
+      const detail = typeof Payload === 'object' && Payload !== null ? (Payload as {errorMessage?: string}).errorMessage : undefined
+      throw new Error(`Function ${name} failed: ${detail ?? FunctionError}`)
+    }
+    // TODO: can we not type cast? might be an aws-lite issue, why is the return type UInt8BlobAdapter
+    return Payload as T
+  }
+
+  // Async invocation by type
   if (resource.topic) {
     await aws.SNS.Publish({
       TopicArn: resource.topic.physicalResourceId,
@@ -91,5 +118,18 @@ export async function invoke(name: string, payload: FunctionPayload) {
     })
   } else {
     throw new Error(`No invokeable resource for function: ${name}`)
+  }
+  return
+}
+
+function checkPayloadSize(payload: string, sync: boolean) {
+  if (sync) {
+    if (Buffer.byteLength(payload, 'utf8') > 6 * 1024 * 1024) {
+      throw new Error(`Payload exceeds maximum size of 6MB`)
+    }
+  } else {
+    if (Buffer.byteLength(payload, 'utf8') > 256 * 1024) {
+      throw new Error(`Payload exceeds maximum size of 256KB`)
+    }
   }
 }
