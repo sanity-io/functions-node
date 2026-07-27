@@ -58,8 +58,8 @@ async function getResource(name: string, aws: awsLite.AwsLiteClient): Promise<Fu
  * @param options - Set `sync: true` to wait for and return the function's result
  */
 export async function invoke<T = unknown>(name: string, payload: FunctionPayload, options: InvokeOptions & {sync: true}): Promise<T>
-export async function invoke(name: string, payload: FunctionPayload, options?: InvokeOptions): Promise<void>
-export async function invoke(name: string, payload: FunctionPayload, options?: InvokeOptions): Promise<unknown> {
+export async function invoke(name: string, payload: FunctionPayload, options?: InvokeOptions & {sync?: false}): Promise<void>
+export async function invoke<T = unknown>(name: string, payload: FunctionPayload, options?: InvokeOptions): Promise<T | undefined> {
   if (!name) throw new Error('Function name was not provided')
   const sync = options?.sync ?? false
 
@@ -95,7 +95,8 @@ export async function invoke(name: string, payload: FunctionPayload, options?: I
       const detail = typeof Payload === 'object' && Payload !== null ? (Payload as {errorMessage?: string}).errorMessage : undefined
       throw new Error(`Function ${name} failed: ${detail ?? FunctionError}`)
     }
-    return Payload
+    // TODO: can we not type cast? might be an aws-lite issue, why is the return type UInt8BlobAdapter
+    return Payload as T
   }
 
   // Async invocation by type

@@ -1,7 +1,7 @@
 /**
  * Callback provided by Sanity CLI when doing local development
  */
-export type InvokeCallback = (name: string, payload: FunctionPayload, options?: InvokeOptions) => Promise<unknown>
+export type InvokeCallback = <T = unknown>(name: string, payload: FunctionPayload, options?: InvokeOptions) => Promise<T>
 
 /**
  * Options provided to invoke
