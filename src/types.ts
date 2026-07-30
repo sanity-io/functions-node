@@ -23,6 +23,8 @@ export interface FunctionContext {
   functionResourceType: string
   /** The resource ID of the function container; resource ID that houses the function. */
   functionResourceId: string
+  /** Sanity lineage token */
+  lineage?: string | undefined
   /**
    * uniqueId for a pipeline run
    */
@@ -52,7 +54,7 @@ export interface FunctionContext {
     apiHost?: string
     dataset: string
     projectId: string
-    token: string
+    token?: string
   }
   /** Resource interface that allows access to Blueprint Resources */
   resources: ResourcesApi
@@ -62,6 +64,8 @@ export interface FunctionContext {
  * The context object passed to the schedule function handler.
  */
 export interface ScheduledFunctionContext {
+  /** Sanity lineage token */
+  lineage?: string | undefined
   /**
    * `local` is set to `true` when testing your function locally.
    * i.e. `sanity function test func-name`

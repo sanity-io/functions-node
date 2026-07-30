@@ -1,12 +1,27 @@
 import awsLite from '@aws-lite/client'
 import {beforeEach, describe, expect, test, vi} from 'vitest'
-import type {ResourcesApi} from '../src'
+import type {FunctionContext, ResourcesApi} from '../src'
 import {invoke} from '../src/invoke.js'
 
 const resources = {} as ResourcesApi
-const context = {resources}
+const defaultContext = {
+  resources,
+  eventResourceType: 'project',
+  eventResourceId: '1234',
+  functionResourceType: 'project',
+  functionResourceId: '5678',
+  clientOptions: {
+    dataset: 'production',
+    projectId: '5678',
+  },
+  lineage: 'abc:1',
+}
+let context: FunctionContext = defaultContext
 
-beforeEach(() => awsLite.testing.reset())
+beforeEach(() => {
+  awsLite.testing.reset()
+  context = defaultContext
+})
 
 describe('invoke', () => {
   test('invoke publishes to SNS topic', async () => {
