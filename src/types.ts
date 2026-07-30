@@ -54,7 +54,7 @@ export interface FunctionContext {
     apiHost?: string
     dataset: string
     projectId: string
-    token?: string
+    token: string
   }
   /** Resource interface that allows access to Blueprint Resources */
   resources: ResourcesApi
