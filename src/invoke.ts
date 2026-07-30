@@ -7,7 +7,7 @@ import type {FunctionPayload, FunctionResourceEnvelope, InvokeOptions} from './t
 let awsPromise: Promise<awsLite.AwsLiteClient> | undefined
 
 const PARTITION_KEY = 'arc-app-res'
-const MAX_RECURSION_COUNT = 16
+export const MAX_RECURSION_COUNT = 16
 
 /**
  * lazy load aws-lite
