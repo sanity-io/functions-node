@@ -6,7 +6,7 @@ import {buildLineageToken, genID, invoke} from '../src/invoke.js'
 
 const fnName: string = 'my-fn'
 const MAX_RECURSION_ERROR = `Function ${fnName} exceeded the maximum recursion depth of ${MAX_RECURSION_COUNT}`
-const SANITY_FUNCTION_EVENT = 'sanity.function.event'
+const SANITY_FUNCTION_PUBSUB = 'sanity.function.pubsub'
 const SANITY_FUNCTION_QUEUE = 'sanity.function.queue'
 /** Function types that have no invoke path at all: neither sync nor async can reach them. */
 const NON_INVOKEABLE_TYPES = ['sanity.function.cron', 'sanity.function.document', 'sanity.function.sync-tag-invalidate']
@@ -34,7 +34,7 @@ function contextForType(type: string): FunctionContext {
   return {...defaultContext, resources: makeResources({id: 'fn-1', name: fnName, type})}
 }
 
-const resources = makeResources({id: 'fn-1', name: fnName, type: SANITY_FUNCTION_EVENT})
+const resources = makeResources({id: 'fn-1', name: fnName, type: SANITY_FUNCTION_PUBSUB})
 const defaultContext = {
   resources,
   eventResourceType: 'project',
@@ -224,10 +224,10 @@ describe('invoke sync is limited to event functions', () => {
     awsLite.testing.mock('Lambda.Invoke', {StatusCode: 200})
   }
 
-  test(`allows a sync invoke of a ${SANITY_FUNCTION_EVENT} function`, async () => {
+  test(`allows a sync invoke of a ${SANITY_FUNCTION_PUBSUB} function`, async () => {
     mockLambdaTarget()
 
-    await invoke(fnName, {event: {data: {}}, context: contextForType(SANITY_FUNCTION_EVENT)}, {sync: true})
+    await invoke(fnName, {event: {data: {}}, context: contextForType(SANITY_FUNCTION_PUBSUB)}, {sync: true})
 
     const {request} = awsLite.testing.getLastRequest('Lambda.Invoke')
     expect(request.InvocationType).toBe('RequestResponse')
@@ -245,7 +245,7 @@ describe('invoke sync is limited to event functions', () => {
   test('rejects a sync invoke when the blueprint does not know the function', async () => {
     mockLambdaTarget()
     // The lookup is by name, so a blueprint describing some other function tells us nothing about this one
-    const unrelated = {...defaultContext, resources: makeResources({id: 'fn-2', name: 'other-fn', type: SANITY_FUNCTION_EVENT})}
+    const unrelated = {...defaultContext, resources: makeResources({id: 'fn-2', name: 'other-fn', type: SANITY_FUNCTION_PUBSUB})}
 
     await expect(invoke(fnName, {event: {data: {}}, context: unrelated}, {sync: true})).rejects.toThrow(
       `Function ${fnName} cannot be invoked synchronously.`,
@@ -302,10 +302,10 @@ describe('invoke async is limited to event and queue functions', () => {
     awsLite.testing.mock('SQS.SendMessage', {MessageId: 'm-1'})
   }
 
-  test(`sends a ${SANITY_FUNCTION_EVENT} function to SNS`, async () => {
+  test(`sends a ${SANITY_FUNCTION_PUBSUB} function to SNS`, async () => {
     mockTopicTarget()
 
-    await invoke(fnName, {event: {data: {}}, context: contextForType(SANITY_FUNCTION_EVENT)})
+    await invoke(fnName, {event: {data: {}}, context: contextForType(SANITY_FUNCTION_PUBSUB)})
 
     expect(awsLite.testing.getLastRequest('SNS.Publish').request.TopicArn).toBe('arn:topic')
   })
@@ -318,11 +318,11 @@ describe('invoke async is limited to event and queue functions', () => {
     expect(awsLite.testing.getLastRequest('SQS.SendMessage').request.QueueUrl).toBe('https://my-queue')
   })
 
-  test(`rejects a ${SANITY_FUNCTION_EVENT} function whose only resource is a queue`, async () => {
+  test(`rejects a ${SANITY_FUNCTION_PUBSUB} function whose only resource is a queue`, async () => {
     // The type and the discovered resource have to agree, so an event function is never queued
     mockQueueTarget()
 
-    await expect(invoke(fnName, {event: {data: {}}, context: contextForType(SANITY_FUNCTION_EVENT)})).rejects.toThrow(
+    await expect(invoke(fnName, {event: {data: {}}, context: contextForType(SANITY_FUNCTION_PUBSUB)})).rejects.toThrow(
       `No invokeable resource for function: ${fnName}`,
     )
     expect(awsLite.testing.getAllRequests('SQS.SendMessage')).toHaveLength(0)
@@ -357,7 +357,7 @@ describe('invoke async is limited to event and queue functions', () => {
 
   test('rejects an async invoke when the blueprint does not know the function', async () => {
     mockTopicTarget()
-    const unrelated = {...defaultContext, resources: makeResources({id: 'fn-2', name: 'other-fn', type: SANITY_FUNCTION_EVENT})}
+    const unrelated = {...defaultContext, resources: makeResources({id: 'fn-2', name: 'other-fn', type: SANITY_FUNCTION_PUBSUB})}
 
     // NOTE: the shared guard reports "synchronously" even on the async path
     await expect(invoke(fnName, {event: {data: {}}, context: unrelated})).rejects.toThrow(`No invokeable resource for function: ${fnName}`)
