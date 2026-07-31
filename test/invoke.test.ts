@@ -7,8 +7,11 @@ import {buildLineageToken, genID, invoke} from '../src/invoke.js'
 const fnName: string = 'my-fn'
 const MAX_RECURSION_ERROR = `Function ${fnName} exceeded the maximum recursion depth of ${MAX_RECURSION_COUNT}`
 const SANITY_FUNCTION_EVENT = 'sanity.function.event'
+const SANITY_FUNCTION_QUEUE = 'sanity.function.queue'
+/** Function types that have no invoke path at all: neither sync nor async can reach them. */
+const NON_INVOKEABLE_TYPES = ['sanity.function.cron', 'sanity.function.document', 'sanity.function.sync-tag-invalidate']
 /** Every function type that is not an event function, i.e. the ones sync invokes must reject. */
-const NON_EVENT_TYPES = ['sanity.function.cron', 'sanity.function.document', 'sanity.function.sync-tag-invalidate']
+const NON_EVENT_TYPES = [SANITY_FUNCTION_QUEUE, ...NON_INVOKEABLE_TYPES]
 
 /** Builds a callable `ResourcesApi` backed by a fixed list of resources, like a deployed blueprint would. */
 function makeResources(...list: BlueprintResource[]): ResourcesApi {
@@ -84,7 +87,7 @@ describe('invoke', () => {
     })
     awsLite.testing.mock('SQS.SendMessage', {MessageId: 'm-1'})
 
-    const payload = {event: {data: {hello: 'world'}}, context}
+    const payload = {event: {data: {hello: 'world'}}, context: contextForType(SANITY_FUNCTION_QUEUE)}
     await invoke(fnName, payload)
 
     const {request} = awsLite.testing.getLastRequest('SQS.SendMessage')
@@ -92,19 +95,17 @@ describe('invoke', () => {
     expect(request.MessageBody).toBe(JSON.stringify(outgoing(payload)))
   })
 
-  test('invoke calls Lambda function', async () => {
+  test('invoke does not fall back to an async Lambda invoke', async () => {
+    // An async invoke goes through the function's event source, never straight to the Lambda
     awsLite.testing.mock('DynamoDB.GetItem', {
       Item: {resources: {function: {logicalResourceId: 'foo', physicalResourceId: 'arn:lambda:my-fn'}}},
     })
     awsLite.testing.mock('Lambda.Invoke', {StatusCode: 200})
 
-    const payload = {event: {data: {hello: 'world'}}, context}
-    await invoke(fnName, payload)
-
-    const {request} = awsLite.testing.getLastRequest('Lambda.Invoke')
-    expect(request.FunctionName).toBe('arn:lambda:my-fn')
-    expect(request.InvocationType).toBe('Event')
-    expect(request.Payload).toEqual(outgoing(payload))
+    await expect(invoke(fnName, {event: {data: {hello: 'world'}}, context})).rejects.toThrow(
+      `No invokeable resource for function: ${fnName}`,
+    )
+    expect(awsLite.testing.getAllRequests('Lambda.Invoke')).toHaveLength(0)
   })
 
   test('invoke calls Lambda function synchronously', async () => {
@@ -268,29 +269,9 @@ describe('invoke sync is limited to event functions', () => {
       Item: {resources: {queue: {logicalResourceId: 'foo', physicalResourceId: 'https://my-queue'}}},
     })
 
-    await expect(invoke(fnName, {event: {data: {}}, context: contextForType('sanity.function.scheduled')}, {sync: true})).rejects.toThrow(
+    await expect(invoke(fnName, {event: {data: {}}, context: contextForType(SANITY_FUNCTION_QUEUE)}, {sync: true})).rejects.toThrow(
       `Function ${fnName} cannot be invoked synchronously.`,
     )
-  })
-
-  test.each(NON_EVENT_TYPES)('still allows an async invoke of a %s function', async (type) => {
-    mockLambdaTarget()
-
-    await invoke(fnName, {event: {data: {}}, context: contextForType(type)})
-
-    const {request} = awsLite.testing.getLastRequest('Lambda.Invoke')
-    expect(request.InvocationType).toBe('Event')
-  })
-
-  test.each(NON_EVENT_TYPES)('still allows an async invoke of a %s function over SNS', async (type) => {
-    awsLite.testing.mock('DynamoDB.GetItem', {
-      Item: {resources: {topic: {logicalResourceId: 'foo', physicalResourceId: 'arn:topic'}}},
-    })
-    awsLite.testing.mock('SNS.Publish', {MessageId: 'm-1'})
-
-    await invoke(fnName, {event: {data: {}}, context: contextForType(type)})
-
-    expect(awsLite.testing.getLastRequest('SNS.Publish').request.TopicArn).toBe('arn:topic')
   })
 
   test.each(NON_EVENT_TYPES)('leaves the %s guard to the CLI when running locally', async (type) => {
@@ -299,6 +280,103 @@ describe('invoke sync is limited to event functions', () => {
     const context = {...contextForType(type), local: true, invoke: localInvoke}
 
     await invoke(fnName, {event: {data: {}}, context}, {sync: true})
+
+    expect(localInvoke).toHaveBeenCalledTimes(1)
+  })
+})
+
+describe('invoke async is limited to event and queue functions', () => {
+  /** Point the disco table at an SNS topic, the event function's event source. */
+  function mockTopicTarget() {
+    awsLite.testing.mock('DynamoDB.GetItem', {
+      Item: {resources: {topic: {logicalResourceId: 'foo', physicalResourceId: 'arn:topic'}}},
+    })
+    awsLite.testing.mock('SNS.Publish', {MessageId: 'm-1'})
+  }
+
+  /** Point the disco table at an SQS queue, the queue function's event source. */
+  function mockQueueTarget() {
+    awsLite.testing.mock('DynamoDB.GetItem', {
+      Item: {resources: {queue: {logicalResourceId: 'foo', physicalResourceId: 'https://my-queue'}}},
+    })
+    awsLite.testing.mock('SQS.SendMessage', {MessageId: 'm-1'})
+  }
+
+  test(`sends a ${SANITY_FUNCTION_EVENT} function to SNS`, async () => {
+    mockTopicTarget()
+
+    await invoke(fnName, {event: {data: {}}, context: contextForType(SANITY_FUNCTION_EVENT)})
+
+    expect(awsLite.testing.getLastRequest('SNS.Publish').request.TopicArn).toBe('arn:topic')
+  })
+
+  test(`sends a ${SANITY_FUNCTION_QUEUE} function to SQS`, async () => {
+    mockQueueTarget()
+
+    await invoke(fnName, {event: {data: {}}, context: contextForType(SANITY_FUNCTION_QUEUE)})
+
+    expect(awsLite.testing.getLastRequest('SQS.SendMessage').request.QueueUrl).toBe('https://my-queue')
+  })
+
+  test(`rejects a ${SANITY_FUNCTION_EVENT} function whose only resource is a queue`, async () => {
+    // The type and the discovered resource have to agree, so an event function is never queued
+    mockQueueTarget()
+
+    await expect(invoke(fnName, {event: {data: {}}, context: contextForType(SANITY_FUNCTION_EVENT)})).rejects.toThrow(
+      `No invokeable resource for function: ${fnName}`,
+    )
+    expect(awsLite.testing.getAllRequests('SQS.SendMessage')).toHaveLength(0)
+  })
+
+  test(`rejects a ${SANITY_FUNCTION_QUEUE} function whose only resource is a topic`, async () => {
+    mockTopicTarget()
+
+    await expect(invoke(fnName, {event: {data: {}}, context: contextForType(SANITY_FUNCTION_QUEUE)})).rejects.toThrow(
+      `No invokeable resource for function: ${fnName}`,
+    )
+    expect(awsLite.testing.getAllRequests('SNS.Publish')).toHaveLength(0)
+  })
+
+  test.each(NON_INVOKEABLE_TYPES)('rejects an async invoke of a %s function published over SNS', async (type) => {
+    mockTopicTarget()
+
+    await expect(invoke(fnName, {event: {data: {}}, context: contextForType(type)})).rejects.toThrow(
+      `No invokeable resource for function: ${fnName}`,
+    )
+    expect(awsLite.testing.getAllRequests('SNS.Publish')).toHaveLength(0)
+  })
+
+  test.each(NON_INVOKEABLE_TYPES)('rejects an async invoke of a %s function queued over SQS', async (type) => {
+    mockQueueTarget()
+
+    await expect(invoke(fnName, {event: {data: {}}, context: contextForType(type)})).rejects.toThrow(
+      `No invokeable resource for function: ${fnName}`,
+    )
+    expect(awsLite.testing.getAllRequests('SQS.SendMessage')).toHaveLength(0)
+  })
+
+  test('rejects an async invoke when the blueprint does not know the function', async () => {
+    mockTopicTarget()
+    const unrelated = {...defaultContext, resources: makeResources({id: 'fn-2', name: 'other-fn', type: SANITY_FUNCTION_EVENT})}
+
+    // NOTE: the shared guard reports "synchronously" even on the async path
+    await expect(invoke(fnName, {event: {data: {}}, context: unrelated})).rejects.toThrow(`No invokeable resource for function: ${fnName}`)
+    expect(awsLite.testing.getAllRequests('SNS.Publish')).toHaveLength(0)
+  })
+
+  test('rejects an async invoke when the context carries no resources API', async () => {
+    mockTopicTarget()
+    const legacy = {...defaultContext, resources: undefined as unknown as ResourcesApi}
+
+    await expect(invoke(fnName, {event: {data: {}}, context: legacy})).rejects.toThrow(`No invokeable resource for function: ${fnName}`)
+    expect(awsLite.testing.getAllRequests('SNS.Publish')).toHaveLength(0)
+  })
+
+  test.each(NON_INVOKEABLE_TYPES)('leaves the %s guard to the CLI when running locally', async (type) => {
+    const localInvoke = vi.fn()
+    const context = {...contextForType(type), local: true, invoke: localInvoke}
+
+    await invoke(fnName, {event: {data: {}}, context})
 
     expect(localInvoke).toHaveBeenCalledTimes(1)
   })
@@ -442,7 +520,7 @@ describe('invoke lineage', () => {
     })
     awsLite.testing.mock('SQS.SendMessage', {MessageId: 'm-1'})
 
-    await invoke(fnName, {event: {data: {}}, context})
+    await invoke(fnName, {event: {data: {}}, context: contextForType(SANITY_FUNCTION_QUEUE)})
 
     const {request} = awsLite.testing.getLastRequest('SQS.SendMessage')
     expect(JSON.parse(request.MessageBody).context.lineage).toBe('abc:2')

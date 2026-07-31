@@ -145,10 +145,10 @@ export async function invoke<T = unknown>(name: string, payload: FunctionPayload
 
   // Look up the function details
   const resource = await getResource(name, aws)
+  const contextResource = payload?.context?.resources?.(name)
 
   // Synchronous invocation
   if (sync === true) {
-    const contextResource = payload?.context?.resources?.(name)
     if (!resource.function || !contextResource) {
       throw new Error(`Function ${name} cannot be invoked synchronously.`)
     }
@@ -169,21 +169,15 @@ export async function invoke<T = unknown>(name: string, payload: FunctionPayload
   }
 
   // Async invocation by type
-  if (resource.topic) {
+  if (resource.topic && contextResource?.type === 'sanity.function.event') {
     await aws.SNS.Publish({
       TopicArn: resource.topic.physicalResourceId,
       Message: stringPayload,
     })
-  } else if (resource.queue) {
+  } else if (resource.queue && contextResource?.type === 'sanity.function.queue') {
     await aws.SQS.SendMessage({
       MessageBody: stringPayload,
       QueueUrl: resource.queue.physicalResourceId,
-    })
-  } else if (resource.function) {
-    await aws.Lambda.Invoke({
-      FunctionName: resource.function.physicalResourceId,
-      Payload: outgoingPayload,
-      InvocationType: 'Event',
     })
   } else {
     throw new Error(`No invokeable resource for function: ${name}`)
