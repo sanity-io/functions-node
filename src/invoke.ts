@@ -152,7 +152,7 @@ export async function invoke<T = unknown>(name: string, payload: FunctionPayload
     if (!resource.function || !contextResource) {
       throw new Error(`Function ${name} cannot be invoked synchronously.`)
     }
-    if (contextResource.type !== 'sanity.function.event') {
+    if (contextResource.type !== 'sanity.function.pubsub') {
       throw new Error(`Function ${name} of type ${contextResource.type} cannot be invoked synchronously.`)
     }
     const {Payload, FunctionError} = await aws.Lambda.Invoke({
@@ -169,7 +169,7 @@ export async function invoke<T = unknown>(name: string, payload: FunctionPayload
   }
 
   // Async invocation by type
-  if (resource.topic && contextResource?.type === 'sanity.function.event') {
+  if (resource.topic && contextResource?.type === 'sanity.function.pubsub') {
     await aws.SNS.Publish({
       TopicArn: resource.topic.physicalResourceId,
       Message: stringPayload,
