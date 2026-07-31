@@ -148,8 +148,12 @@ export async function invoke<T = unknown>(name: string, payload: FunctionPayload
 
   // Synchronous invocation
   if (sync === true) {
-    if (!resource.function) {
+    const contextResource = payload?.context?.resources?.(name)
+    if (!resource.function || !contextResource) {
       throw new Error(`Function ${name} cannot be invoked synchronously.`)
+    }
+    if (contextResource.type !== 'sanity.function.event') {
+      throw new Error(`Function ${name} of type ${contextResource.type} cannot be invoked synchronously.`)
     }
     const {Payload, FunctionError} = await aws.Lambda.Invoke({
       FunctionName: resource.function.physicalResourceId,

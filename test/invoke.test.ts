@@ -1,13 +1,37 @@
 import awsLite from '@aws-lite/client'
 import {beforeEach, describe, expect, test, vi} from 'vitest'
-import type {FunctionContext, ResourcesApi} from '../src'
+import type {BlueprintResource, FunctionContext, ResourcesApi} from '../src'
 import {MAX_RECURSION_COUNT} from '../src'
 import {buildLineageToken, genID, invoke} from '../src/invoke.js'
 
 const fnName: string = 'my-fn'
 const MAX_RECURSION_ERROR = `Function ${fnName} exceeded the maximum recursion depth of ${MAX_RECURSION_COUNT}`
+const SANITY_FUNCTION_EVENT = 'sanity.function.event'
+/** Every function type that is not an event function, i.e. the ones sync invokes must reject. */
+const NON_EVENT_TYPES = ['sanity.function.cron', 'sanity.function.document', 'sanity.function.sync-tag-invalidate']
 
-const resources = {} as ResourcesApi
+/** Builds a callable `ResourcesApi` backed by a fixed list of resources, like a deployed blueprint would. */
+function makeResources(...list: BlueprintResource[]): ResourcesApi {
+  const byName = (name: string) => list.find((resource) => resource.name === name)
+  const byType = (prefix: string) => (name: string) => list.find((resource) => resource.name === name && resource.type.startsWith(prefix))
+  return Object.assign(byName, {
+    all: () => [...list],
+    [Symbol.iterator]: () => list[Symbol.iterator](),
+    cors: byType('sanity.cors'),
+    dataset: byType('sanity.dataset'),
+    function: byType('sanity.function'),
+    project: byType('sanity.project'),
+    role: byType('sanity.role'),
+    webhook: byType('sanity.webhook'),
+  }) as ResourcesApi
+}
+
+/** A context whose blueprint reports `fnName` as a function of the given type. */
+function contextForType(type: string): FunctionContext {
+  return {...defaultContext, resources: makeResources({id: 'fn-1', name: fnName, type})}
+}
+
+const resources = makeResources({id: 'fn-1', name: fnName, type: SANITY_FUNCTION_EVENT})
 const defaultContext = {
   resources,
   eventResourceType: 'project',
@@ -98,6 +122,17 @@ describe('invoke', () => {
     expect(request.Payload).toEqual(outgoing(payload))
   })
 
+  test('invoke throws when a sync target has no Lambda to call', async () => {
+    awsLite.testing.mock('DynamoDB.GetItem', {
+      Item: {resources: {topic: {logicalResourceId: 'foo', physicalResourceId: 'arn:topic'}}},
+    })
+
+    await expect(invoke(fnName, {event: {data: {}}, context}, {sync: true})).rejects.toThrow(
+      `Function ${fnName} cannot be invoked synchronously.`,
+    )
+    expect(awsLite.testing.getAllRequests('SNS.Publish')).toBeUndefined()
+  })
+
   test('invoke calls local function', async () => {
     const localInvoke = vi.fn()
     const payload = {event: {data: {hello: 'world'}}, context: {...context, local: true, invoke: localInvoke}}
@@ -176,6 +211,96 @@ describe('invoke', () => {
 
     await expect(invoke(fnName, {event, context}, {sync: true})).rejects.toThrow('Payload exceeds maximum size of 6MB')
     expect(awsLite.testing.getAllRequests('DynamoDB.GetItem')).toBeUndefined()
+  })
+})
+
+describe('invoke sync is limited to event functions', () => {
+  /** Point the disco table at a Lambda, the only resource a sync invoke can call. */
+  function mockLambdaTarget() {
+    awsLite.testing.mock('DynamoDB.GetItem', {
+      Item: {resources: {function: {logicalResourceId: 'foo', physicalResourceId: 'arn:lambda:my-fn'}}},
+    })
+    awsLite.testing.mock('Lambda.Invoke', {StatusCode: 200})
+  }
+
+  test(`allows a sync invoke of a ${SANITY_FUNCTION_EVENT} function`, async () => {
+    mockLambdaTarget()
+
+    await invoke(fnName, {event: {data: {}}, context: contextForType(SANITY_FUNCTION_EVENT)}, {sync: true})
+
+    const {request} = awsLite.testing.getLastRequest('Lambda.Invoke')
+    expect(request.InvocationType).toBe('RequestResponse')
+  })
+
+  test.each(NON_EVENT_TYPES)('rejects a sync invoke of a %s function', async (type) => {
+    mockLambdaTarget()
+
+    await expect(invoke(fnName, {event: {data: {}}, context: contextForType(type)}, {sync: true})).rejects.toThrow(
+      `Function ${fnName} of type ${type} cannot be invoked synchronously.`,
+    )
+    expect(awsLite.testing.getAllRequests('Lambda.Invoke')).toHaveLength(0)
+  })
+
+  test('rejects a sync invoke when the blueprint does not know the function', async () => {
+    mockLambdaTarget()
+    // The lookup is by name, so a blueprint describing some other function tells us nothing about this one
+    const unrelated = {...defaultContext, resources: makeResources({id: 'fn-2', name: 'other-fn', type: SANITY_FUNCTION_EVENT})}
+
+    await expect(invoke(fnName, {event: {data: {}}, context: unrelated}, {sync: true})).rejects.toThrow(
+      `Function ${fnName} cannot be invoked synchronously.`,
+    )
+    expect(awsLite.testing.getAllRequests('Lambda.Invoke')).toHaveLength(0)
+  })
+
+  test('rejects a sync invoke when the context carries no resources API', async () => {
+    mockLambdaTarget()
+    // An older runtime may not populate `resources`; without it the type cannot be confirmed
+    const legacy = {...defaultContext, resources: undefined as unknown as ResourcesApi}
+
+    await expect(invoke(fnName, {event: {data: {}}, context: legacy}, {sync: true})).rejects.toThrow(
+      `Function ${fnName} cannot be invoked synchronously.`,
+    )
+    expect(awsLite.testing.getAllRequests('Lambda.Invoke')).toHaveLength(0)
+  })
+
+  test('reports the missing sync target before the function type', async () => {
+    awsLite.testing.mock('DynamoDB.GetItem', {
+      Item: {resources: {queue: {logicalResourceId: 'foo', physicalResourceId: 'https://my-queue'}}},
+    })
+
+    await expect(invoke(fnName, {event: {data: {}}, context: contextForType('sanity.function.scheduled')}, {sync: true})).rejects.toThrow(
+      `Function ${fnName} cannot be invoked synchronously.`,
+    )
+  })
+
+  test.each(NON_EVENT_TYPES)('still allows an async invoke of a %s function', async (type) => {
+    mockLambdaTarget()
+
+    await invoke(fnName, {event: {data: {}}, context: contextForType(type)})
+
+    const {request} = awsLite.testing.getLastRequest('Lambda.Invoke')
+    expect(request.InvocationType).toBe('Event')
+  })
+
+  test.each(NON_EVENT_TYPES)('still allows an async invoke of a %s function over SNS', async (type) => {
+    awsLite.testing.mock('DynamoDB.GetItem', {
+      Item: {resources: {topic: {logicalResourceId: 'foo', physicalResourceId: 'arn:topic'}}},
+    })
+    awsLite.testing.mock('SNS.Publish', {MessageId: 'm-1'})
+
+    await invoke(fnName, {event: {data: {}}, context: contextForType(type)})
+
+    expect(awsLite.testing.getLastRequest('SNS.Publish').request.TopicArn).toBe('arn:topic')
+  })
+
+  test.each(NON_EVENT_TYPES)('leaves the %s guard to the CLI when running locally', async (type) => {
+    // Local runs never reach the disco table, so the Sanity CLI decides what it can invoke
+    const localInvoke = vi.fn()
+    const context = {...contextForType(type), local: true, invoke: localInvoke}
+
+    await invoke(fnName, {event: {data: {}}, context}, {sync: true})
+
+    expect(localInvoke).toHaveBeenCalledTimes(1)
   })
 })
 
