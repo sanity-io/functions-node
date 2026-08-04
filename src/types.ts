@@ -26,7 +26,7 @@ export interface FunctionContext {
   /** Sanity lineage token */
   lineage?: string | undefined
   /**
-   * uniqueId for a pipeline run
+   * uniqueId for a durable function operation
    */
   runId?: string
   /**
@@ -239,13 +239,13 @@ export type FunctionResourceEnvelope = {
 }[FunctionResourceKey]
 
 /**
- * The interface defining the operations available to a pipeline function.
+ * The interface defining the operations available to a durable function.
  * These operations are steps that delegate to other functions, and wait for external callbacks.
- * @alpha Using pipeline functions is considered experimental and may change in the future.
+ * @alpha Using durables is considered experimental and may change in the future.
  * @public
  * @hidden
  */
-export interface PipelineOperations {
+export interface DurableOperations {
   /**
    * Runs a named step. Its result is recorded, so if the workflow re-runs the step
    * is not executed again. Failures are retried on their own.
@@ -279,11 +279,11 @@ export interface PipelineOperations {
 }
 
 /**
- * @alpha Using pipeline functions is considered experimental and may change in the future.
+ * @alpha Using durables is considered experimental and may change in the future.
  * @hidden
  */
-export type PipelineHandler = (envelope: {
+export type DurableHandler = (envelope: {
   context: FunctionContext
   event?: GenericEvent
-  step: PipelineOperations
+  step: DurableOperations
 }) => unknown | Promise<unknown>
