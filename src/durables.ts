@@ -1,15 +1,15 @@
-import type {PipelineHandler} from './types'
+import type {DurableHandler} from './types'
 
 /**
- * Determine if `createPipeline({}, () => {})` or `createPipeline(() => {})`.
+ * Determine if `createDurable({}, () => {})` or `createDurable(() => {})`.
  * @param configOrHandler
  * @param maybeHandler
  * @returns resolved arguments
  */
 const resolveFuncArgs = <TConfig extends {name: string}>(
-  configOrHandler: TConfig | PipelineHandler,
-  maybeHandler?: PipelineHandler,
-): {config?: TConfig; handler?: PipelineHandler; hadConfigArg: boolean} => {
+  configOrHandler: TConfig | DurableHandler,
+  maybeHandler?: DurableHandler,
+): {config?: TConfig; handler?: DurableHandler; hadConfigArg: boolean} => {
   return typeof configOrHandler === 'function'
     ? {config: undefined, handler: configOrHandler, hadConfigArg: false}
     : {config: configOrHandler, handler: maybeHandler, hadConfigArg: true}
@@ -52,40 +52,37 @@ const validateConfig = (config: unknown) => {
 }
 
 /**
- * Pipeline creation function that can be called with or without a config object.
- * @alpha Pipelines are an experimental feature and may change in the future.
+ * Durables creation function that can be called with or without a config object.
+ * @alpha Durables are an experimental feature and may change in the future.
  * @hidden
  * @param  handler
  * @returns The handler function, unmodified.
  */
-export function createPipeline(handler: PipelineHandler): PipelineHandler & {config?: undefined}
+export function createDurable(handler: DurableHandler): DurableHandler & {config?: undefined}
 
 /**
- * Pipeline creation function that can be called with or without a config object.
- * @alpha Pipelines are an experimental feature and may change in the future.
+ * Durables creation function that can be called with or without a config object.
+ * @alpha Durables are an experimental feature and may change in the future.
  * @hidden
  * @param config
  * @param handler
  * @returns  The handler function, unmodified and the provided config object.
  */
-export function createPipeline<TConfig extends {name: string}>(
-  config: TConfig,
-  handler: PipelineHandler,
-): PipelineHandler & {config: TConfig}
+export function createDurable<TConfig extends {name: string}>(config: TConfig, handler: DurableHandler): DurableHandler & {config: TConfig}
 
 /**
- * Pipeline creation function that can be called with or without a config object.
- * @alpha Pipelines are an experimental feature and may change in the future.
+ * Durables creation function that can be called with or without a config object.
+ * @alpha Durable functions are an experimental feature and may change in the future.
  * @hidden
  * @public
  * @param configOrHandler
  * @param maybeHandler
  * @returns The handler function, unmodified and the config object if provided
  */
-export function createPipeline<TConfig extends {name: string}>(
-  configOrHandler: TConfig | PipelineHandler,
-  maybeHandler?: PipelineHandler,
-): PipelineHandler {
+export function createDurable<TConfig extends {name: string}>(
+  configOrHandler: TConfig | DurableHandler,
+  maybeHandler?: DurableHandler,
+): DurableHandler {
   const {config, handler, hadConfigArg} = resolveFuncArgs(configOrHandler, maybeHandler)
   const errors = [
     ...(hadConfigArg ? validateConfig(config) : []),
@@ -96,12 +93,12 @@ export function createPipeline<TConfig extends {name: string}>(
     throw new TypeError(errors.join(', '))
   }
   // Separate config from the handler during build
-  return Object.assign(handler as PipelineHandler, {config})
+  return Object.assign(handler as DurableHandler, {config})
 }
 
 /**
- * @alpha Pipelines are an experimental feature and may change in the future.
+ * @alpha Durable functions are an experimental feature and may change in the future.
  * @hidden
  * @public
  */
-export const pipeline = {createPipeline}
+export const durable = {createDurable}
