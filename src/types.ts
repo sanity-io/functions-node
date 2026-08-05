@@ -239,6 +239,16 @@ export type FunctionResourceEnvelope = {
 }[FunctionResourceKey]
 
 /**
+ * The signature of the duration object passed to the `wait` method of a durable function.
+ * It can be specified in days, hours, minutes, or seconds.
+ */
+type DurableWaitDuration =
+  | {days: number; hours?: number; minutes?: number; seconds?: number}
+  | {hours: number; minutes?: number; seconds?: number}
+  | {minutes: number; seconds?: number}
+  | {seconds: number}
+
+/**
  * The interface defining the operations available to a durable function.
  * These operations are steps that delegate to other functions, and wait for external callbacks.
  * @alpha Using durables is considered experimental and may change in the future.
@@ -271,11 +281,29 @@ export interface DurableOperations {
    * similar to ctx.waitForCallback()
    * @remarks cannot be nested inside another step
    * @param name - Step name
-   * @param fn -Receives the generated callbackId and returns a delivered promise
+   * @param fn - Receives the generated callbackId and returns a delivered promise
    * @returns The value returned by the executed function
    */
   waitForCallback<T>(name: string, fn: (callbackId: string) => Promise<void>): Promise<T>
-  // @todo: other methods wanted for durables
+
+  /**
+   * Waits for a specified duration
+   * similar to ctx.wait()
+   * @remarks cannot be nested inside another step
+   * @example
+   * Wait for 30 seconds
+   * ```ts
+   * await step.wait('wait30Sec', { seconds: 30 });
+   * ```
+   * Wait for 2 days and 3 hours
+   * ```ts
+   * await step.wait('waitALongTime', { days: 2, hours: 3 });
+   * ```
+   * @param name - Step name
+   * @param duration - Amount of time the function will wait before continuing. Duration is an object with properties of `seconds`, `minutes`, or `hours`, or `days`.
+   * @returns The value returned by the executed function
+   */
+  wait<T>(name: string, duration: DurableWaitDuration): Promise<T>
 }
 
 /**
