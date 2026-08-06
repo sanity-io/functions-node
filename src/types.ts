@@ -349,10 +349,25 @@ export interface DurableOperations {
    * ```
    * @param name - Step name
    * @param duration - Amount of time the function will wait before continuing.
-   * Duration is an object with properties of `seconds`, `minutes`, or `hours`, or `days`. Must be at least {seconds: 1}
+   * Duration is an object with properties of `seconds`, `minutes`, `hours`, or `days`. Must be at least {seconds: 1}
    * @returns Resolves after the duration
    */
-  wait(name: string, duration: DurableDuration): Promise<void>
+  wait(name: string | undefined, duration: DurableDuration): Promise<void>
+
+  /**
+   * Waits for a specified duration
+   * similar to ctx.wait()
+   * @remarks cannot be nested inside another step
+   * @example
+   * Wait for 30 seconds
+   * ```ts
+   * await step.wait({ seconds: 30 });
+   * ```
+   * @param duration - Amount of time the function will wait before continuing.
+   * Duration is an object with properties of `seconds`, `minutes`, `hours`, or `days`. Must be at least {seconds: 1}
+   * @returns Resolves after the duration
+   */
+  wait(duration: DurableDuration): Promise<void>
 
   /**
    * Waits for a specified condition to be met
@@ -402,10 +417,57 @@ export interface DurableOperations {
    * @returns The value returned by the executed function
    */
   waitForCondition<T>(
-    name: string,
+    name: string | undefined,
     fn: (state: T, context: DurableContext) => Promise<T>,
     options: DurableWaitForConditionOptions<T>,
   ): Promise<T>
+
+  /**
+   * Waits for a specified condition to be met
+   * similar to ctx.waitForCondition()
+   * @remarks cannot be nested inside another step
+   * @example
+   * ```ts
+   * await step.waitForCondition(
+   *   async (state, context) => {
+   *     context.log.info('Checking for article', {
+   *       runId: context.runId,
+   *       attempt: context.attempt,
+   *     })
+   *
+   *     const client = createClient({
+   *       apiVersion: '2026-08-05',
+   *       ...context.clientOptions,
+   *     })
+   *     const article = await client.fetch<Article | null>(
+   *       '*[_type == "article"][0]',
+   *     )
+   *     return {...state, article}
+   *   },
+   *   {
+   *     initial: {
+   *       article: null as Article | null,
+   *     },
+   *     next: (state, context) => {
+   *       if (state.article) return {shouldContinue: false}
+   *
+   *       return {
+   *         shouldContinue: true,
+   *         delay: {
+   *           seconds: Math.min((context.attempt ?? 1) * 2, 60),
+   *         },
+   *       }
+   *     },
+   *   },
+   * )
+   * ```
+   * @param fn - Called on each attempt with the current state and durable context.
+   * Returns a promise resolving to the updated state,
+   * which is passed to next to determine whether the condition has been met or another check should be scheduled.
+   * @param options - Configuration options for the condition
+   * @returns The value returned by the executed function
+   */
+  waitForCondition<T>(fn: (state: T, context: DurableContext) => Promise<T>, options: DurableWaitForConditionOptions<T>): Promise<T>
 }
 
 /**
