@@ -352,7 +352,7 @@ export interface DurableOperations {
    * Duration is an object with properties of `seconds`, `minutes`, `hours`, or `days`. Must be at least {seconds: 1}
    * @returns Resolves after the duration
    */
-  wait(name: string | undefined, duration: DurableDuration): Promise<void>
+  wait(name: string, duration: DurableDuration): Promise<void>
 
   /**
    * Waits for a specified duration
@@ -417,7 +417,7 @@ export interface DurableOperations {
    * @returns The value returned by the executed function
    */
   waitForCondition<T>(
-    name: string | undefined,
+    name: string,
     fn: (state: T, context: DurableContext) => Promise<T>,
     options: DurableWaitForConditionOptions<T>,
   ): Promise<T>
