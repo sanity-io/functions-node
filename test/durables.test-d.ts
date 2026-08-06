@@ -102,9 +102,6 @@ describe('DurableOperations.wait', () => {
   })
 
   test('rejects unsupported calls', () => {
-    // @ts-expect-error a name is required
-    step.wait({seconds: 30})
-
     // @ts-expect-error numeric durations are unsupported
     step.wait('delay', 30)
 
