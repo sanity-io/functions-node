@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.6.1](https://github.com/sanity-io/functions-node/compare/v1.6.0...v1.6.1) (2026-08-07)
+
+
+### Bug Fixes
+
+* mark as alpha / hide `invoke()` method from docs ([#43](https://github.com/sanity-io/functions-node/issues/43)) ([7733384](https://github.com/sanity-io/functions-node/commit/77333844a2236c18ce5870dd8bfe8cae1fdb27f5))
+
 ## [1.6.0](https://github.com/sanity-io/functions-node/compare/v1.5.0...v1.6.0) (2026-08-06)
 
 
