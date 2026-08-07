@@ -1,5 +1,21 @@
 # Changelog
 
+## [1.6.0](https://github.com/sanity-io/functions-node/compare/v1.5.0...v1.6.0) (2026-08-06)
+
+
+### Features
+
+* wait and waitForCondition contract ([#42](https://github.com/sanity-io/functions-node/issues/42)) ([df89dc0](https://github.com/sanity-io/functions-node/commit/df89dc0aef4dad65986f6ced73204b9b7c792335))
+
+
+### Bug Fixes
+
+* Add lineage token to invoke if not set ([#36](https://github.com/sanity-io/functions-node/issues/36)) ([58c827b](https://github.com/sanity-io/functions-node/commit/58c827bd4dc5d27af8431a046eacf5673ae3e91c))
+* change from pipelines to durables ([#41](https://github.com/sanity-io/functions-node/issues/41)) ([bccc389](https://github.com/sanity-io/functions-node/commit/bccc389f4c022ff48eac750f248169e0cfec1ffd))
+* Only invoke queue and pubsub functions async ([#39](https://github.com/sanity-io/functions-node/issues/39)) ([2af3be9](https://github.com/sanity-io/functions-node/commit/2af3be9d68485d6360ec5c41c1196fa97c962780))
+* rename event to pubsub ([#40](https://github.com/sanity-io/functions-node/issues/40)) ([ca11e26](https://github.com/sanity-io/functions-node/commit/ca11e26a7ff1ec5512efb450fe624b6a676b67c6))
+* Sync function-to-function invoke only supports sanity.function.event ([#38](https://github.com/sanity-io/functions-node/issues/38)) ([4d27236](https://github.com/sanity-io/functions-node/commit/4d272364f92070aef1f2390bfe1aae1f09f368aa))
+
 ## [1.5.0](https://github.com/sanity-io/functions-node/compare/v1.4.0...v1.5.0) (2026-07-27)
 
 
