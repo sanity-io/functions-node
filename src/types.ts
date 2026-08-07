@@ -1,10 +1,14 @@
 /**
  * Callback provided by Sanity CLI when doing local development
+ * @alpha
+ * @hidden
  */
 export type InvokeCallback = <T = unknown>(name: string, payload: FunctionPayload, options?: InvokeOptions) => Promise<T>
 
 /**
  * Options provided to invoke
+ * @alpha
+ * @hidden
  */
 export type InvokeOptions = {
   // Whether the function should be invoked synchronously

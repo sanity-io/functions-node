@@ -112,6 +112,8 @@ export function buildLineageToken(name: string, lineage: string | undefined) {
  * event source and nothing is returned. Pass `{sync: true}` to invoke the function and
  * wait for its return value.
  *
+ * @alpha Experimental / preview function not ready for use
+ * @hidden
  * @param name - Name of the function to invoke
  * @param payload - The `{event, context}` envelope to deliver
  * @param options - Set `sync: true` to wait for and return the function's result
