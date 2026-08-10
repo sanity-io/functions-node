@@ -8,6 +8,8 @@ import {
   eventHandler,
   type FunctionContext,
   type GenericContext,
+  type PubSubEventHandler,
+  pubSubEventHandler,
   type ResourcesApi,
   type ScheduledEventHandler,
   type ScheduledFunctionContext,
@@ -158,18 +160,19 @@ describe('syncTagInvalidateEventHandler', () => {
   })
 })
 
-describe('eventHandler', () => {
+describe('pubSubEventHandler', () => {
   test('has correct type signature', () => {
-    expectTypeOf(eventHandler).toBeFunction()
-    expectTypeOf(eventHandler).parameter(0).toExtend<EventHandler>()
-    expectTypeOf(eventHandler).returns.toExtend<EventHandler>()
+    expectTypeOf(pubSubEventHandler).toBeFunction()
+    // `IResult` is unconstrained, so the uninstantiated signature widens it to `unknown`
+    expectTypeOf(pubSubEventHandler).parameter(0).toExtend<PubSubEventHandler<any, unknown>>()
+    expectTypeOf(pubSubEventHandler).returns.toExtend<PubSubEventHandler<any, unknown>>()
 
     // @ts-expect-error should be a function
-    assertType(eventHandler('foo'))
+    assertType(pubSubEventHandler('foo'))
   })
 
   test('has a permissive envelope that needs no narrowing', () => {
-    const handler = eventHandler((envelope) => {
+    const handler = pubSubEventHandler((envelope) => {
       // `context`/`event` accept any supported shape, `done` is optional
       expectTypeOf(envelope.context).toEqualTypeOf<GenericContext>()
       expectTypeOf(envelope.event).toEqualTypeOf<DocumentEvent | SyncTagInvalidateEvent>()
@@ -183,10 +186,67 @@ describe('eventHandler', () => {
   })
 
   test('can pass data type as generic for the document payload', () => {
-    const handler = eventHandler<{foo: string}>((envelope) => {
+    const handler = pubSubEventHandler<{foo: string}>((envelope) => {
       expectTypeOf(envelope.event).toEqualTypeOf<DocumentEvent<{foo: string}> | SyncTagInvalidateEvent>()
     })
 
     handler({context: documentContext, event: {data: {foo: 'bar'}}})
+  })
+
+  test('handlers returning nothing resolve to void', () => {
+    const sync = pubSubEventHandler(() => {})
+    expectTypeOf(sync).returns.toEqualTypeOf<void | Promise<void>>()
+
+    const async = pubSubEventHandler(async () => {})
+    expectTypeOf(async).returns.toEqualTypeOf<void | Promise<void>>()
+  })
+
+  test('infers the result type so pubsub functions can return a value', () => {
+    // Pubsub functions may be invoked with `{sync: true}`, which returns this value to the caller
+    const handler = pubSubEventHandler(async ({context, event}) => ({context, event}))
+
+    expectTypeOf(handler).returns.toEqualTypeOf<
+      | {context: GenericContext; event: DocumentEvent | SyncTagInvalidateEvent}
+      | Promise<{context: GenericContext; event: DocumentEvent | SyncTagInvalidateEvent}>
+    >()
+
+    const sync = pubSubEventHandler(() => ({ok: true}))
+    expectTypeOf(sync).returns.toEqualTypeOf<{ok: boolean} | Promise<{ok: boolean}>>()
+  })
+
+  test('can pass both the data and result types as generics', () => {
+    const handler = pubSubEventHandler<{foo: string}, {count: number}>(async ({event}) => {
+      expectTypeOf(event).toEqualTypeOf<DocumentEvent<{foo: string}> | SyncTagInvalidateEvent>()
+      return {count: 1}
+    })
+
+    expectTypeOf(handler).returns.toEqualTypeOf<{count: number} | Promise<{count: number}>>()
+
+    // @ts-expect-error result must match the declared `IResult`
+    assertType(pubSubEventHandler<{foo: string}, {count: number}>(async () => ({count: 'nope'})))
+  })
+
+  test('an explicitly annotated PubSubEventHandler still rejects a returned value', () => {
+    // The default `IResult` of `void` preserves the stricter behaviour for annotations
+    // @ts-expect-error `PubSubEventHandler` without `IResult` may only resolve to void
+    const handler: PubSubEventHandler = async () => ({ok: true})
+    assertType(handler)
+  })
+})
+
+describe('eventHandler (deprecated alias)', () => {
+  test('is type-identical to pubSubEventHandler', () => {
+    expectTypeOf(eventHandler).toEqualTypeOf<typeof pubSubEventHandler>()
+    expectTypeOf<EventHandler>().toEqualTypeOf<PubSubEventHandler>()
+    expectTypeOf<EventHandler<{foo: string}, {count: number}>>().toEqualTypeOf<PubSubEventHandler<{foo: string}, {count: number}>>()
+  })
+
+  test('still infers the result type', () => {
+    const handler = eventHandler(async ({context, event}) => ({context, event}))
+
+    expectTypeOf(handler).returns.toEqualTypeOf<
+      | {context: GenericContext; event: DocumentEvent | SyncTagInvalidateEvent}
+      | Promise<{context: GenericContext; event: DocumentEvent | SyncTagInvalidateEvent}>
+    >()
   })
 })

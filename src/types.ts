@@ -140,18 +140,29 @@ export type GenericContext = FunctionContext | ScheduledFunctionContext | SyncTa
 export type GenericEvent = DocumentEvent | SyncTagInvalidateEvent
 
 /**
- * A generic function handler that can receive the payload of any function type.
+ * A function handler for a pubsub event.
  *
- * The envelope is intentionally permissive so a single handler can be registered
- * regardless of the event source without narrowing: `context` is any supported
- * context, `event` is any supported event, and `done` is optional (present only
- * for sync-tag-invalidate events).
+ * A pubsub function can be triggered by any event source, so the envelope is intentionally
+ * permissive and needs no narrowing: `context` is any supported context, `event` is any
+ * supported event, and `done` is optional (present only for sync-tag-invalidate events).
+ *
+ * `IResult` is the value the handler resolves to and defaults to `void`. Pubsub is the one
+ * function type that may be invoked with {@link invoke | `invoke(name, payload, {sync: true})`},
+ * which returns the handler's resolved value to the caller.
  */
-export type EventHandler<IData = any> = (envelope: {
+export type PubSubEventHandler<IData = any, IResult = void> = (envelope: {
   context: GenericContext
   event: DocumentEvent<IData> | SyncTagInvalidateEvent
   done?: SyncTagInvalidateCallback
-}) => void | Promise<void>
+}) => IResult | Promise<IResult>
+
+/**
+ * A generic function handler that can receive the payload of any function type.
+ *
+ * @deprecated Renamed to {@link PubSubEventHandler}. This alias will be removed in the next
+ * major version.
+ */
+export type EventHandler<IData = any, IResult = void> = PubSubEventHandler<IData, IResult>
 
 /**
  * A callback function to invoke once a sync-tag-invalidate event has been processed. Signals to Sanity that sync tag invalidation has completed.
