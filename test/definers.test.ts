@@ -4,6 +4,8 @@ import {
   documentEventHandler,
   type EventHandler,
   eventHandler,
+  type PubSubEventHandler,
+  pubSubEventHandler,
   type ScheduledEventHandler,
   type SyncTagInvalidateEventHandler,
   scheduledEventHandler,
@@ -64,7 +66,25 @@ describe('syncTagEventHandler', () => {
   })
 })
 
-describe('eventHandler', () => {
+describe('pubSubEventHandler', () => {
+  test('passes through handler function verbatim', () => {
+    const handler = (() => {
+      console.log('Event received:')
+    }) satisfies PubSubEventHandler
+
+    const result = pubSubEventHandler(handler)
+    expect(result).toBe(handler)
+  })
+
+  test('throws error if handler is not a function', () => {
+    expect(() => {
+      // @ts-expect-error Intentionally wrong type
+      pubSubEventHandler('foo')
+    }).toThrowErrorMatchingInlineSnapshot(`[TypeError: \`handler\` must be a function]`)
+  })
+})
+
+describe('eventHandler (deprecated alias)', () => {
   test('passes through handler function verbatim', () => {
     const handler = (() => {
       console.log('Event received:')
