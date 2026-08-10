@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.6.2](https://github.com/sanity-io/functions-node/compare/v1.6.1...v1.6.2) (2026-08-10)
+
+
+### Bug Fixes
+
+* rename event to pubsub ([#47](https://github.com/sanity-io/functions-node/issues/47)) ([6a4b2e3](https://github.com/sanity-io/functions-node/commit/6a4b2e3a0ad177ec6fbf2fa1f1d2ab6558fd1565))
+* un-hide invoke() method from docs ([#45](https://github.com/sanity-io/functions-node/issues/45)) ([948791c](https://github.com/sanity-io/functions-node/commit/948791cf301d5c7d02a5c044e88f03ff799d0ab5))
+
 ## [1.6.1](https://github.com/sanity-io/functions-node/compare/v1.6.0...v1.6.1) (2026-08-07)
 
 
