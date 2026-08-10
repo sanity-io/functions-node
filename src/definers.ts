@@ -1,4 +1,4 @@
-import type { DocumentEventHandler, PubSubEventHandler, ScheduledEventHandler, SyncTagInvalidateEventHandler } from './types.js'
+import type {DocumentEventHandler, PubSubEventHandler, ScheduledEventHandler, SyncTagInvalidateEventHandler} from './types.js'
 
 /**
  * Defines a "document event" function handler.
@@ -46,7 +46,9 @@ export function syncTagInvalidateEventHandler(handler: SyncTagInvalidateEventHan
  * @param handler - The event handler function to use.
  * @returns The handler function, unmodified.
  */
-export function pubSubEventHandler<IData = any, IResult = void>(handler: PubSubEventHandler<IData, IResult>): PubSubEventHandler<IData, IResult> {
+export function pubSubEventHandler<IData = any, IResult = void>(
+  handler: PubSubEventHandler<IData, IResult>,
+): PubSubEventHandler<IData, IResult> {
   if (typeof handler !== 'function') throw new TypeError('`handler` must be a function')
   return handler
 }
