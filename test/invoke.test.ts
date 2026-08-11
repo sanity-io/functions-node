@@ -34,6 +34,11 @@ function contextForType(type: string): FunctionContext {
   return {...defaultContext, resources: makeResources({id: 'fn-1', name: fnName, type})}
 }
 
+/** A context whose blueprint reports `name` as an event function, so the type guard lets it through. */
+function contextForName(name: string): FunctionContext {
+  return {...defaultContext, resources: makeResources({id: 'fn-1', name, type: SANITY_FUNCTION_PUBSUB})}
+}
+
 const resources = makeResources({id: 'fn-1', name: fnName, type: SANITY_FUNCTION_PUBSUB})
 const defaultContext = {
   resources,
@@ -190,13 +195,15 @@ describe('invoke', () => {
   test('invoke throws when function is not found in disco table', async () => {
     awsLite.testing.mock('DynamoDB.GetItem', {})
 
-    await expect(invoke('missing-fn', {event: {data: {}}, context})).rejects.toThrow('Function not found: missing-fn')
+    await expect(invoke('missing-fn', {event: {data: {}}, context: contextForName('missing-fn')})).rejects.toThrow(
+      'Function not found: missing-fn',
+    )
   })
 
   test('invoke throws when function is found but missing resource', async () => {
     awsLite.testing.mock('DynamoDB.GetItem', {Item: {}})
 
-    await expect(invoke('missing-resource', {event: {data: {}}, context})).rejects.toThrow(
+    await expect(invoke('missing-resource', {event: {data: {}}, context: contextForName('missing-resource')})).rejects.toThrow(
       'Resource record for missing-resource is missing resources',
     )
   })
@@ -264,24 +271,27 @@ describe('invoke sync is limited to event functions', () => {
     expect(awsLite.testing.getAllRequests('Lambda.Invoke')).toHaveLength(0)
   })
 
-  test('reports the missing sync target before the function type', async () => {
+  test('reports the function type before looking up the sync target', async () => {
     awsLite.testing.mock('DynamoDB.GetItem', {
       Item: {resources: {queue: {logicalResourceId: 'foo', physicalResourceId: 'https://my-queue'}}},
     })
 
     await expect(invoke(fnName, {event: {data: {}}, context: contextForType(SANITY_FUNCTION_QUEUE)}, {sync: true})).rejects.toThrow(
-      `Function ${fnName} cannot be invoked synchronously.`,
+      `Function ${fnName} of type ${SANITY_FUNCTION_QUEUE} cannot be invoked synchronously.`,
     )
+    // The type alone settles it, so the disco table is never consulted
+    expect(awsLite.testing.getAllRequests('DynamoDB.GetItem')).toHaveLength(0)
   })
 
-  test.each(NON_EVENT_TYPES)('leaves the %s guard to the CLI when running locally', async (type) => {
-    // Local runs never reach the disco table, so the Sanity CLI decides what it can invoke
+  test.each(NON_EVENT_TYPES)('rejects a local sync invoke of a %s function', async (type) => {
+    // The type guard runs ahead of the local hand-off, so the Sanity CLI is never asked to run it
     const localInvoke = vi.fn()
     const context = {...contextForType(type), local: true, invoke: localInvoke}
 
-    await invoke(fnName, {event: {data: {}}, context}, {sync: true})
-
-    expect(localInvoke).toHaveBeenCalledTimes(1)
+    await expect(invoke(fnName, {event: {data: {}}, context}, {sync: true})).rejects.toThrow(
+      `Function ${fnName} of type ${type} cannot be invoked synchronously.`,
+    )
+    expect(localInvoke).not.toHaveBeenCalled()
   })
 })
 
@@ -359,7 +369,7 @@ describe('invoke async is limited to event and queue functions', () => {
     mockTopicTarget()
     const unrelated = {...defaultContext, resources: makeResources({id: 'fn-2', name: 'other-fn', type: SANITY_FUNCTION_PUBSUB})}
 
-    // NOTE: the shared guard reports "synchronously" even on the async path
+    // An unknown function has no type to check, so it lands on the same error as a cron or document function
     await expect(invoke(fnName, {event: {data: {}}, context: unrelated})).rejects.toThrow(`No invokeable resource for function: ${fnName}`)
     expect(awsLite.testing.getAllRequests('SNS.Publish')).toHaveLength(0)
   })
@@ -372,13 +382,13 @@ describe('invoke async is limited to event and queue functions', () => {
     expect(awsLite.testing.getAllRequests('SNS.Publish')).toHaveLength(0)
   })
 
-  test.each(NON_INVOKEABLE_TYPES)('leaves the %s guard to the CLI when running locally', async (type) => {
+  test.each(NON_INVOKEABLE_TYPES)('rejects a local async invoke of a %s function', async (type) => {
+    // The type guard runs ahead of the local hand-off, so the Sanity CLI is never asked to run it
     const localInvoke = vi.fn()
     const context = {...contextForType(type), local: true, invoke: localInvoke}
 
-    await invoke(fnName, {event: {data: {}}, context})
-
-    expect(localInvoke).toHaveBeenCalledTimes(1)
+    await expect(invoke(fnName, {event: {data: {}}, context})).rejects.toThrow(`No invokeable resource for function: ${fnName}`)
+    expect(localInvoke).not.toHaveBeenCalled()
   })
 })
 
