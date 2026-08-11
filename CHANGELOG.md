@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.6.3](https://github.com/sanity-io/functions-node/compare/v1.6.2...v1.6.3) (2026-08-11)
+
+
+### Bug Fixes
+
+* align logger to wrapper, align logger to how console works ([#49](https://github.com/sanity-io/functions-node/issues/49)) ([fc240e2](https://github.com/sanity-io/functions-node/commit/fc240e2bb691b7007d8809f8b1478c2acf68400b))
+* Throw exception when trying to invoke non-pubsub function locally ([#50](https://github.com/sanity-io/functions-node/issues/50)) ([4d9c21c](https://github.com/sanity-io/functions-node/commit/4d9c21cbb7ef6fd4ef8eb5ee432104916049cc20))
+
 ## [1.6.2](https://github.com/sanity-io/functions-node/compare/v1.6.1...v1.6.2) (2026-08-10)
 
 
