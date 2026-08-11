@@ -311,13 +311,19 @@ export interface DurableWaitForConditionOptions<T> {
   next: (state: T, context: BaseDurableOperationArgs) => DurableWaitForConditionDecision
 }
 
+// @todo: follow-up to better define separated context
+export type DurableOperationArgs = {
+  ctx: DurableContext
+  logger?: DurableLogger
+}
+
 /**
  * The interface defining the operations available to a durable function.
  * These operations are steps that delegate to other functions, and wait for external callbacks.
  * @alpha Using durables is considered experimental and may change in the future.
  * @hidden
  */
-export interface DurableOperations {
+export type DurableOperations = {
   /**
    * Runs a named step. Its result is recorded, so if the workflow re-runs the step
    * is not executed again. Failures are retried on their own.
@@ -327,7 +333,8 @@ export interface DurableOperations {
    * @param fn - function being executed
    * @returns The value returned by the executed function
    */
-  run<T>(name: string, fn: (args: BaseDurableOperationArgs) => T | Promise<T>): Promise<T>
+  run<T>(name: string, fn: (args: DurableOperationArgs) => T | Promise<T>): Promise<T>
+
   /**
    * Calls another function and awaits its result.
    * similar to ctx.invoke()
@@ -346,7 +353,7 @@ export interface DurableOperations {
    * @param fn - Receives the generated callbackId and returns a delivered promise
    * @returns The value returned by the executed function
    */
-  waitForCallback<T>(name: string, fn: (callbackId: string, args: BaseDurableOperationArgs) => Promise<void>): Promise<T>
+  waitForCallback<T>(name: string, fn: (callbackId: string, args: DurableOperationArgs) => Promise<void>): Promise<T>
 
   /**
    * Waits for a specified duration
@@ -429,7 +436,7 @@ export interface DurableOperations {
    */
   waitForCondition<T>(
     name: string,
-    fn: (state: T, args: BaseDurableOperationArgs) => Promise<T>,
+    fn: (state: T, args: DurableOperationArgs) => Promise<T>,
     options: DurableWaitForConditionOptions<T>,
   ): Promise<T>
 
@@ -475,7 +482,7 @@ export interface DurableOperations {
    * @param options - Configuration options for the condition
    * @returns The value returned by the executed function
    */
-  waitForCondition<T>(fn: (state: T, args: BaseDurableOperationArgs) => Promise<T>, options: DurableWaitForConditionOptions<T>): Promise<T>
+  waitForCondition<T>(fn: (state: T, args: DurableOperationArgs) => Promise<T>, options: DurableWaitForConditionOptions<T>): Promise<T>
 }
 
 /**
