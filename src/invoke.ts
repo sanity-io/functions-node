@@ -132,6 +132,20 @@ export async function invoke<T = unknown>(name: string, payload: FunctionPayload
   // Check to make sure payload is not over the max we can handle
   checkPayloadSize(stringPayload, sync)
 
+  // Make sure we can invoke this function type
+  const contextResource = payload?.context?.resources?.(name)
+  const functionType = contextResource?.type
+  if (sync === true) {
+    if (functionType === undefined) {
+      throw new Error(`Function ${name} cannot be invoked synchronously.`)
+    }
+    if (functionType !== 'sanity.function.pubsub') {
+      throw new Error(`Function ${name} of type ${functionType} cannot be invoked synchronously.`)
+    }
+  } else if (functionType !== 'sanity.function.pubsub' && functionType !== 'sanity.function.queue') {
+    throw new Error(`No invokeable resource for function: ${name}`)
+  }
+
   // Local invoke path for Sanity CLI
   if (outgoingPayload?.context?.local) {
     if (!outgoingPayload?.context?.invoke) {
@@ -145,15 +159,11 @@ export async function invoke<T = unknown>(name: string, payload: FunctionPayload
 
   // Look up the function details
   const resource = await getResource(name, aws)
-  const contextResource = payload?.context?.resources?.(name)
 
   // Synchronous invocation
   if (sync === true) {
     if (!resource.function || !contextResource) {
       throw new Error(`Function ${name} cannot be invoked synchronously.`)
-    }
-    if (contextResource.type !== 'sanity.function.pubsub') {
-      throw new Error(`Function ${name} of type ${contextResource.type} cannot be invoked synchronously.`)
     }
     const {Payload, FunctionError} = await aws.Lambda.Invoke({
       FunctionName: resource.function.physicalResourceId,
@@ -169,12 +179,12 @@ export async function invoke<T = unknown>(name: string, payload: FunctionPayload
   }
 
   // Async invocation by type
-  if (resource.topic && contextResource?.type === 'sanity.function.pubsub') {
+  if (resource.topic && functionType === 'sanity.function.pubsub') {
     await aws.SNS.Publish({
       TopicArn: resource.topic.physicalResourceId,
       Message: stringPayload,
     })
-  } else if (resource.queue && contextResource?.type === 'sanity.function.queue') {
+  } else if (resource.queue && functionType === 'sanity.function.queue') {
     await aws.SQS.SendMessage({
       MessageBody: stringPayload,
       QueueUrl: resource.queue.physicalResourceId,
@@ -182,6 +192,7 @@ export async function invoke<T = unknown>(name: string, payload: FunctionPayload
   } else {
     throw new Error(`No invokeable resource for function: ${name}`)
   }
+
   return
 }
 
