@@ -251,11 +251,11 @@ export type FunctionResourceEnvelope = {
  * @hidden
  */
 export interface DurableLogger {
-  debug(message?: string, ...optionalParams: unknown[]): void
-  info(message?: string, ...optionalParams: unknown[]): void
-  warn(message?: string, ...optionalParams: unknown[]): void
-  error(message?: string, ...optionalParams: unknown[]): void
-  log(message?: string, ...optionalParams: unknown[]): void
+  debug(message?: string, ...optionalParams: any[]): void
+  info(message?: string, ...optionalParams: any[]): void
+  warn(message?: string, ...optionalParams: any[]): void
+  error(message?: string, ...optionalParams: any[]): void
+  log(message?: string, ...optionalParams: any[]): void
 }
 
 /**
