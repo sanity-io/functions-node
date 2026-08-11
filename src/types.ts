@@ -247,16 +247,15 @@ export type FunctionResourceEnvelope = {
 
 /**
  * Logger interface for durables.
- * Exposes console.log through the durable context.
  * @alpha Using durables is considered experimental and may change in the future.
  * @hidden
  */
 export interface DurableLogger {
-  debug(message?: string, ...optionalParams: any[]): void
-  info(message?: string, ...optionalParams: any[]): void
-  warn(message?: string, ...optionalParams: any[]): void
-  error(message?: string, ...optionalParams: any[]): void
-  log(message?: string, ...optionalParams: any[]): void
+  debug(message?: string, ...optionalParams: unknown[]): void
+  info(message?: string, ...optionalParams: unknown[]): void
+  warn(message?: string, ...optionalParams: unknown[]): void
+  error(message?: string, ...optionalParams: unknown[]): void
+  log(message?: string, ...optionalParams: unknown[]): void
 }
 
 /**
@@ -393,7 +392,7 @@ export interface DurableOperations {
    * await step.waitForCondition(
    *   'waitForCondition',
    *   async (state, {logger}) => {
-   *     logger.log('Checking for article)
+   *     logger.log('Checking for article')
    *
    *     const client = createClient({
    *       apiVersion: '2026-08-05',
