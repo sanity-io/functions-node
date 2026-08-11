@@ -302,7 +302,11 @@ export interface DurableWaitForConditionOptions<T> {
   next: (state: T, context: DurableContext) => DurableWaitForConditionDecision
 }
 
-// @todo: follow-up to better define separated context
+/**
+ * // @todo: follow-up to better define separated context
+ * @alpha Using durables is considered experimental and may change in the future.
+ * @hidden
+ */
 export type DurableOperationArgs = {
   ctx: DurableContext
   logger?: DurableLogger
