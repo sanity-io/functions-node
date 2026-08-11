@@ -357,7 +357,7 @@ export type DurableOperations = {
    * @param fn - Receives the generated callbackId and returns a delivered promise
    * @returns The value returned by the executed function
    */
-  waitForCallback<T>(name: string, fn: (callbackId: string, args: DurableOperationArgs) => Promise<void>): Promise<T>
+  waitForCallback<T>(name: string, fn: (callbackId: string, args: BaseDurableOperationArgs) => Promise<void>): Promise<T>
 
   /**
    * Waits for a specified duration
@@ -440,7 +440,7 @@ export type DurableOperations = {
    */
   waitForCondition<T>(
     name: string,
-    fn: (state: T, args: DurableOperationArgs) => Promise<T>,
+    fn: (state: T, args: BaseDurableOperationArgs) => Promise<T>,
     options: DurableWaitForConditionOptions<T>,
   ): Promise<T>
 
@@ -486,7 +486,7 @@ export type DurableOperations = {
    * @param options - Configuration options for the condition
    * @returns The value returned by the executed function
    */
-  waitForCondition<T>(fn: (state: T, args: DurableOperationArgs) => Promise<T>, options: DurableWaitForConditionOptions<T>): Promise<T>
+  waitForCondition<T>(fn: (state: T, args: BaseDurableOperationArgs) => Promise<T>, options: DurableWaitForConditionOptions<T>): Promise<T>
 }
 
 /**
