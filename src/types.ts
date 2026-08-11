@@ -245,20 +245,18 @@ export type FunctionResourceEnvelope = {
   [K in FunctionResourceKey]-?: {[P in K]: FunctionResource} & {[P in Exclude<FunctionResourceKey, K>]?: FunctionResource}
 }[FunctionResourceKey]
 
-type DurableLogLevel = 'DEBUG' | 'INFO' | 'WARN' | 'ERROR'
-
 /**
- * Context logger interface for durables.
+ * Logger interface for durables.
  * Exposes console.log through the durable context.
  * @alpha Using durables is considered experimental and may change in the future.
  * @hidden
  */
 interface DurableLogger {
-  log?(level: DurableLogLevel, ...params: unknown[]): void
-  debug(...params: unknown[]): void
-  info(...params: unknown[]): void
-  warn(...params: unknown[]): void
-  error(...params: unknown[]): void
+  (message?: any, ...optionalParams: any[]): void
+  debug(message?: any, ...optionalParams: any[]): void
+  info(message?: any, ...optionalParams: any[]): void
+  warn(message?: any, ...optionalParams: any[]): void
+  error(message?: any, ...optionalParams: any[]): void
 }
 
 /**
@@ -266,10 +264,6 @@ interface DurableLogger {
  * @hidden
  */
 export type DurableContext = FunctionContext & {
-  /**
-   * Durable logger
-   */
-  log: DurableLogger
   /**
    * Current attempt of the active durable operation.
    * Only available in methods that expose the attempt like `waitForCondition`
@@ -308,6 +302,12 @@ export interface DurableWaitForConditionOptions<T> {
   next: (state: T, context: DurableContext) => DurableWaitForConditionDecision
 }
 
+// @todo: follow-up to better define separated context
+export type DurableOperationArgs = {
+  ctx: DurableContext
+  logger?: DurableLogger
+}
+
 /**
  * The interface defining the operations available to a durable function.
  * These operations are steps that delegate to other functions, and wait for external callbacks.
@@ -324,7 +324,7 @@ export interface DurableOperations {
    * @param fn - function being executed
    * @returns The value returned by the executed function
    */
-  run<T>(name: string, fn: (ctx: DurableContext) => T | Promise<T>): Promise<T>
+  run<T>(name: string, fn: (args: DurableOperationArgs) => T | Promise<T>): Promise<T>
   /**
    * Calls another function and awaits its result.
    * similar to ctx.invoke()
@@ -343,7 +343,7 @@ export interface DurableOperations {
    * @param fn - Receives the generated callbackId and returns a delivered promise
    * @returns The value returned by the executed function
    */
-  waitForCallback<T>(name: string, fn: (callbackId: string, ctx: DurableContext) => Promise<void>): Promise<T>
+  waitForCallback<T>(name: string, fn: (callbackId: string, args: DurableOperationArgs) => Promise<void>): Promise<T>
 
   /**
    * Waits for a specified duration
@@ -429,7 +429,7 @@ export interface DurableOperations {
    */
   waitForCondition<T>(
     name: string,
-    fn: (state: T, context: DurableContext) => Promise<T>,
+    fn: (state: T, args: DurableOperationArgs) => Promise<T>,
     options: DurableWaitForConditionOptions<T>,
   ): Promise<T>
 
@@ -478,7 +478,7 @@ export interface DurableOperations {
    * @param options - Configuration options for the condition
    * @returns The value returned by the executed function
    */
-  waitForCondition<T>(fn: (state: T, context: DurableContext) => Promise<T>, options: DurableWaitForConditionOptions<T>): Promise<T>
+  waitForCondition<T>(fn: (state: T, args: DurableOperationArgs) => Promise<T>, options: DurableWaitForConditionOptions<T>): Promise<T>
 }
 
 /**
@@ -489,4 +489,5 @@ export type DurableHandler = (envelope: {
   context: DurableContext
   event?: GenericEvent
   step: DurableOperations
+  logger: DurableLogger
 }) => unknown | Promise<unknown>
