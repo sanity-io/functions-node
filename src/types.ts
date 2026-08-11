@@ -245,31 +245,34 @@ export type FunctionResourceEnvelope = {
   [K in FunctionResourceKey]-?: {[P in K]: FunctionResource} & {[P in Exclude<FunctionResourceKey, K>]?: FunctionResource}
 }[FunctionResourceKey]
 
-type DurableLogLevel = 'DEBUG' | 'INFO' | 'WARN' | 'ERROR'
-
 /**
- * Context logger interface for durables.
- * Exposes console.log through the durable context.
+ * Logger interface for durables.
  * @alpha Using durables is considered experimental and may change in the future.
  * @hidden
  */
-interface DurableLogger {
-  log?(level: DurableLogLevel, ...params: unknown[]): void
-  debug(...params: unknown[]): void
-  info(...params: unknown[]): void
-  warn(...params: unknown[]): void
-  error(...params: unknown[]): void
+export interface DurableLogger {
+  debug(message?: string, ...optionalParams: unknown[]): void
+  info(message?: string, ...optionalParams: unknown[]): void
+  warn(message?: string, ...optionalParams: unknown[]): void
+  error(message?: string, ...optionalParams: unknown[]): void
+  log(message?: string, ...optionalParams: unknown[]): void
 }
 
 /**
+ * // @todo: follow-up to better define separated context
+ * @alpha Using durables is considered experimental and may change in the future.
+ * @hidden
+ */
+export interface BaseDurableOperationArgs {
+  logger: DurableLogger
+}
+
+/**
+ * @todo: follow-up to better define separated context
  * @alpha Using durables is considered experimental and may change in the future.
  * @hidden
  */
 export type DurableContext = FunctionContext & {
-  /**
-   * Durable logger
-   */
-  log: DurableLogger
   /**
    * Current attempt of the active durable operation.
    * Only available in methods that expose the attempt like `waitForCondition`
@@ -305,7 +308,7 @@ export type DurableWaitForConditionDecision = {shouldContinue: true; delay: Dura
  */
 export interface DurableWaitForConditionOptions<T> {
   initial: T
-  next: (state: T, context: DurableContext) => DurableWaitForConditionDecision
+  next: (state: T, context: BaseDurableOperationArgs) => DurableWaitForConditionDecision
 }
 
 /**
@@ -324,7 +327,7 @@ export interface DurableOperations {
    * @param fn - function being executed
    * @returns The value returned by the executed function
    */
-  run<T>(name: string, fn: (ctx: DurableContext) => T | Promise<T>): Promise<T>
+  run<T>(name: string, fn: (args: BaseDurableOperationArgs) => T | Promise<T>): Promise<T>
   /**
    * Calls another function and awaits its result.
    * similar to ctx.invoke()
@@ -343,7 +346,7 @@ export interface DurableOperations {
    * @param fn - Receives the generated callbackId and returns a delivered promise
    * @returns The value returned by the executed function
    */
-  waitForCallback<T>(name: string, fn: (callbackId: string, ctx: DurableContext) => Promise<void>): Promise<T>
+  waitForCallback<T>(name: string, fn: (callbackId: string, args: BaseDurableOperationArgs) => Promise<void>): Promise<T>
 
   /**
    * Waits for a specified duration
@@ -388,11 +391,8 @@ export interface DurableOperations {
    * ```ts
    * await step.waitForCondition(
    *   'waitForCondition',
-   *   async (state, context) => {
-   *     context.log.info('Checking for article', {
-   *       runId: context.runId,
-   *       attempt: context.attempt,
-   *     })
+   *   async (state, {logger}) => {
+   *     logger.log('Checking for article')
    *
    *     const client = createClient({
    *       apiVersion: '2026-08-05',
@@ -429,7 +429,7 @@ export interface DurableOperations {
    */
   waitForCondition<T>(
     name: string,
-    fn: (state: T, context: DurableContext) => Promise<T>,
+    fn: (state: T, args: BaseDurableOperationArgs) => Promise<T>,
     options: DurableWaitForConditionOptions<T>,
   ): Promise<T>
 
@@ -440,11 +440,8 @@ export interface DurableOperations {
    * @example
    * ```ts
    * await step.waitForCondition(
-   *   async (state, context) => {
-   *     context.log.info('Checking for article', {
-   *       runId: context.runId,
-   *       attempt: context.attempt,
-   *     })
+   *   async (state, {logger}) => {
+   *     logger.log('Checking for article')
    *
    *     const client = createClient({
    *       apiVersion: '2026-08-05',
@@ -478,7 +475,7 @@ export interface DurableOperations {
    * @param options - Configuration options for the condition
    * @returns The value returned by the executed function
    */
-  waitForCondition<T>(fn: (state: T, context: DurableContext) => Promise<T>, options: DurableWaitForConditionOptions<T>): Promise<T>
+  waitForCondition<T>(fn: (state: T, args: BaseDurableOperationArgs) => Promise<T>, options: DurableWaitForConditionOptions<T>): Promise<T>
 }
 
 /**
@@ -489,4 +486,5 @@ export type DurableHandler = (envelope: {
   context: DurableContext
   event?: GenericEvent
   step: DurableOperations
+  logger: DurableLogger
 }) => unknown | Promise<unknown>

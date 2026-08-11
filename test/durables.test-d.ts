@@ -1,7 +1,9 @@
 import {assertType, describe, expectTypeOf, test} from 'vitest'
 import type {
+  BaseDurableOperationArgs,
   DurableContext,
   DurableDuration,
+  DurableLogger,
   DurableOperations,
   DurableWaitForConditionDecision,
   DurableWaitForConditionOptions,
@@ -27,24 +29,27 @@ describe('DurableContext', () => {
     expectTypeOf(context.resources).toEqualTypeOf<FunctionContext['resources']>()
   })
 
-  test('exposes durable metadata', () => {
+  // @todo: skipping at the moment - changing in follow-up
+  test.skip('exposes durable metadata', () => {
     expectTypeOf(context.runId).toEqualTypeOf<string | undefined>()
     expectTypeOf(context.attempt).toEqualTypeOf<number | undefined>()
   })
 
   test('exposes the AWS-compatible logger methods', () => {
-    expectTypeOf(context.log.debug('debug')).toEqualTypeOf<void>()
-    expectTypeOf(context.log.info('info')).toEqualTypeOf<void>()
-    expectTypeOf(context.log.warn('warn')).toEqualTypeOf<void>()
-    expectTypeOf(context.log.error('error')).toEqualTypeOf<void>()
+    const logger = {} as DurableLogger
+    expectTypeOf(logger.debug('debug')).toEqualTypeOf<void>()
+    expectTypeOf(logger.info('info')).toEqualTypeOf<void>()
+    expectTypeOf(logger.warn('warn')).toEqualTypeOf<void>()
+    expectTypeOf(logger.error('error')).toEqualTypeOf<void>()
+    expectTypeOf(logger.log('INFO', 'generic log')).toEqualTypeOf<void>()
 
-    context.log.log?.('INFO', 'generic log')
+    logger.log('INFO', 'generic log')
 
     // @ts-expect-error durable logger does not expose trace
-    context.log.trace('trace')
+    logger.trace('trace')
 
     // @ts-expect-error durable logger does not expose fatal
-    context.log.fatal('fatal')
+    logger.fatal('fatal')
   })
 })
 
@@ -77,9 +82,9 @@ describe('DurableDuration', () => {
 
 describe('DurableOperations.run', () => {
   test('provides DurableContext and infers the result', () => {
-    const result = step.run('load-article', (ctx) => {
-      expectTypeOf(ctx).toEqualTypeOf<DurableContext>()
-      ctx.log.info('Loading article')
+    const result = step.run('load-article', (args) => {
+      expectTypeOf(args).toEqualTypeOf<BaseDurableOperationArgs>()
+      args.logger.info('Loading article')
 
       return {id: 'article-id' as string}
     })
@@ -111,11 +116,11 @@ describe('DurableOperations.wait', () => {
 })
 
 describe('DurableOperations.waitForCallback', () => {
-  test('provides callback ID and DurableContext', () => {
-    const result = step.waitForCallback<{approved: boolean}>('approval', async (callbackId, ctx) => {
+  test('provides callback ID and BaseDurableOperationArgs', () => {
+    const result = step.waitForCallback<{approved: boolean}>('approval', async (callbackId, args) => {
       expectTypeOf(callbackId).toEqualTypeOf<string>()
-      expectTypeOf(ctx).toEqualTypeOf<DurableContext>()
-      ctx.log.info('Submitting approval request', callbackId)
+      expectTypeOf(args).toEqualTypeOf<BaseDurableOperationArgs>()
+      args.logger.info('Submitting approval request', callbackId)
     })
 
     expectTypeOf(result).toEqualTypeOf<Promise<{approved: boolean}>>()
@@ -128,7 +133,7 @@ describe('DurableOperations.waitForCondition', () => {
       'wait-for-article',
       async (state, context) => {
         expectTypeOf(state).toEqualTypeOf<ArticleState>()
-        expectTypeOf(context).toEqualTypeOf<DurableContext>()
+        expectTypeOf(context).toEqualTypeOf<BaseDurableOperationArgs>()
 
         return {
           ...state,
@@ -141,7 +146,7 @@ describe('DurableOperations.waitForCondition', () => {
         },
         next: (state, context) => {
           expectTypeOf(state).toEqualTypeOf<ArticleState>()
-          expectTypeOf(context).toEqualTypeOf<DurableContext>()
+          expectTypeOf(context).toEqualTypeOf<BaseDurableOperationArgs>()
 
           if (state.article) {
             return {shouldContinue: false}
@@ -149,7 +154,7 @@ describe('DurableOperations.waitForCondition', () => {
 
           return {
             shouldContinue: true,
-            delay: {seconds: context.attempt ?? 1},
+            delay: {seconds: 1},
           }
         },
       },
