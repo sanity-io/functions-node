@@ -251,7 +251,7 @@ export type FunctionResourceEnvelope = {
  * @alpha Using durables is considered experimental and may change in the future.
  * @hidden
  */
-interface DurableLogger {
+export interface DurableLogger {
   debug(message?: string, ...optionalParams: any[]): void
   info(message?: string, ...optionalParams: any[]): void
   warn(message?: string, ...optionalParams: any[]): void
