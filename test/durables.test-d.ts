@@ -1,6 +1,7 @@
 import {assertType, describe, expectTypeOf, test} from 'vitest'
 import type {
-  BaseDurableOperationArgs,
+  DurableAttemptArgs,
+  DurableCallbackArgs,
   DurableContext,
   DurableDuration,
   DurableLogger,
@@ -30,9 +31,6 @@ describe('DurableContext', () => {
   })
 
   test('does not expose operation metadata', () => {
-    // @ts-expect-error runId is not available at handler scope
-    context.runId
-
     // @ts-expect-error attempt is not available at handler scope
     context.attempt
   })
@@ -52,6 +50,9 @@ describe('DurableContext', () => {
 
     // @ts-expect-error durable logger does not expose fatal
     logger.fatal('fatal')
+
+    // @ts-expect-error durable logger does not expose dir
+    logger.dir('something')
   })
 })
 
@@ -85,7 +86,8 @@ describe('DurableDuration', () => {
 describe('DurableOperations.run', () => {
   test('provides DurableContext and infers the result', () => {
     const result = step.run('load-article', (args) => {
-      expectTypeOf(args).toEqualTypeOf<BaseDurableOperationArgs>()
+      expectTypeOf(args).toEqualTypeOf<DurableAttemptArgs>()
+      expectTypeOf(args.attempt).toEqualTypeOf<number>()
       args.logger.info('Loading article')
 
       return {id: 'article-id' as string}
@@ -118,10 +120,10 @@ describe('DurableOperations.wait', () => {
 })
 
 describe('DurableOperations.waitForCallback', () => {
-  test('provides callback ID and BaseDurableOperationArgs', () => {
+  test('provides callback ID and DurableCallbackArgs', () => {
     const result = step.waitForCallback<{approved: boolean}>('approval', async (callbackId, args) => {
       expectTypeOf(callbackId).toEqualTypeOf<string>()
-      expectTypeOf(args).toEqualTypeOf<BaseDurableOperationArgs>()
+      expectTypeOf(args).toEqualTypeOf<DurableCallbackArgs>()
       args.logger.info('Submitting approval request', callbackId)
     })
 
