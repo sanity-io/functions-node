@@ -125,7 +125,7 @@ export async function invoke<T = unknown>(name: string, payload: FunctionPayload
   // Update lineage or throw error if we exceed the max recursion value
   const outgoingPayload: FunctionPayload = {
     ...payload,
-    context: {...payload.context, lineage: buildLineageToken(name, payload.context?.lineage)},
+    context: {...payload.context, lineage: buildLineageToken(name, env['X_SANITY_LINEAGE'])},
   }
 
   const stringPayload = JSON.stringify(outgoingPayload)
