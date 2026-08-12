@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.6.5](https://github.com/sanity-io/functions-node/compare/v1.6.4...v1.6.5) (2026-08-12)
+
+
+### Bug Fixes
+
+* Ensure lineage is respected in func-to-func invokes ([#55](https://github.com/sanity-io/functions-node/issues/55)) ([42e77e3](https://github.com/sanity-io/functions-node/commit/42e77e37323374805b3dfa3a3deefca8b87a96b6))
+
 ## [1.6.4](https://github.com/sanity-io/functions-node/compare/v1.6.3...v1.6.4) (2026-08-12)
 
 
