@@ -1,43 +1,22 @@
 {
   "$schema": "https://json.schemastore.org/tsconfig",
   "compilerOptions": {
+    "rootDir": "./src",
     "outDir": "./dist",
-    "rootDir": ".",
-    "target": "ES2023",
-    "lib": ["ES2023"],
-    "module": "ES2022",
+    "target": "es2024",
+    "module": "esnext",
     "moduleResolution": "bundler",
+    "types": ["node", "@aws-lite/dynamodb-types", "@aws-lite/lambda-types", "@aws-lite/sns-types", "@aws-lite/sqs-types"],
     "skipLibCheck": true,
-    "incremental": true,
     "sourceMap": true,
     "declaration": true,
-    // Strictest of the strict?
-    "strictNullChecks": true,
-    "strictFunctionTypes": true,
-    "strictPropertyInitialization": true,
-    "alwaysStrict": true,
-    "noImplicitAny": true,
-    "noImplicitThis": true,
-    "noImplicitReturns": true,
-    "noImplicitOverride": true,
-    // Strict
-    "checkJs": true,
-    "isolatedModules": true,
+    // strict, esModuleInterop, etc. are on by default as of TS6
     "verbatimModuleSyntax": true,
-    "strict": true,
+    "erasableSyntaxOnly": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true,
-    "noPropertyAccessFromIndexSignature": true,
-    // Recommended
-    "allowImportingTsExtensions": false,
-    "resolveJsonModule": false,
-    "allowJs": true,
-    "allowSyntheticDefaultImports": true,
-    "esModuleInterop": true,
-    "forceConsistentCasingInFileNames": true,
-    "erasableSyntaxOnly": true,
-    "types": ["node", "@aws-lite/dynamodb-types", "@aws-lite/lambda-types", "@aws-lite/sns-types", "@aws-lite/sqs-types"]
+    "noPropertyAccessFromIndexSignature": true
   },
   "exclude": ["node_modules", "dist"],
   "include": ["src/**/*.ts"]
