@@ -312,16 +312,6 @@ export interface DurableWaitForConditionOptions<T> {
 }
 
 /**
- * // @todo: follow-up to better define separated context
- * @alpha Using durables is considered experimental and may change in the future.
- * @hidden
- */
-export type DurableOperationArgs = {
-  ctx: DurableContext
-  logger?: DurableLogger
-}
-
-/**
  * The interface defining the operations available to a durable function.
  * These operations are steps that delegate to other functions, and wait for external callbacks.
  * @alpha Using durables is considered experimental and may change in the future.
