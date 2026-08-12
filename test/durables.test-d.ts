@@ -29,10 +29,12 @@ describe('DurableContext', () => {
     expectTypeOf(context.resources).toEqualTypeOf<FunctionContext['resources']>()
   })
 
-  // @todo: skipping at the moment - changing in follow-up
-  test.skip('exposes durable metadata', () => {
-    expectTypeOf(context.runId).toEqualTypeOf<string | undefined>()
-    expectTypeOf(context.attempt).toEqualTypeOf<number | undefined>()
+  test('does not expose operation metadata', () => {
+    // @ts-expect-error runId is not available at handler scope
+    context.runId
+
+    // @ts-expect-error attempt is not available at handler scope
+    context.attempt
   })
 
   test('exposes the AWS-compatible logger methods', () => {
@@ -131,9 +133,10 @@ describe('DurableOperations.waitForCondition', () => {
   test('carries the same state through the full contract', () => {
     const result = step.waitForCondition<ArticleState>(
       'wait-for-article',
-      async (state, context) => {
+      async (state, args) => {
         expectTypeOf(state).toEqualTypeOf<ArticleState>()
-        expectTypeOf(context).toEqualTypeOf<BaseDurableOperationArgs>()
+        expectTypeOf(args.logger).toEqualTypeOf<DurableLogger>()
+        expectTypeOf(args.attempt).toEqualTypeOf<number>()
 
         return {
           ...state,
@@ -144,9 +147,9 @@ describe('DurableOperations.waitForCondition', () => {
         initial: {
           article: null,
         },
-        next: (state, context) => {
+        next: (state, attempt) => {
           expectTypeOf(state).toEqualTypeOf<ArticleState>()
-          expectTypeOf(context).toEqualTypeOf<BaseDurableOperationArgs>()
+          expectTypeOf(attempt).toEqualTypeOf<number>()
 
           if (state.article) {
             return {shouldContinue: false}
@@ -154,7 +157,7 @@ describe('DurableOperations.waitForCondition', () => {
 
           return {
             shouldContinue: true,
-            delay: {seconds: 1},
+            delay: {seconds: attempt},
           }
         },
       },

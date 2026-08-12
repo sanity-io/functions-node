@@ -246,42 +246,42 @@ export type FunctionResourceEnvelope = {
 }[FunctionResourceKey]
 
 /**
+ * Durable alias of FunctionsContext
+ * @alpha Using durables is considered experimental and may change in the future.
+ * @hidden
+ */
+export type DurableContext = FunctionContext
+
+/**
  * Logger interface for durables.
  * @alpha Using durables is considered experimental and may change in the future.
  * @hidden
  */
 export interface DurableLogger {
-  debug(message?: string, ...optionalParams: unknown[]): void
-  info(message?: string, ...optionalParams: unknown[]): void
-  warn(message?: string, ...optionalParams: unknown[]): void
-  error(message?: string, ...optionalParams: unknown[]): void
-  log(message?: string, ...optionalParams: unknown[]): void
+  debug(...params: unknown[]): void
+  info(...params: unknown[]): void
+  warn(...params: unknown[]): void
+  error(...params: unknown[]): void
+  log(...params: unknown[]): void
 }
 
 /**
- * // @todo: follow-up to better define separated context
  * @alpha Using durables is considered experimental and may change in the future.
  * @hidden
  */
-export interface BaseDurableOperationArgs {
+export interface DurableCallbackArgs {
   logger: DurableLogger
 }
 
 /**
- * @todo: follow-up to better define separated context
+ * Arguments passed to callbacks that execute a durable attempt.
+ * step.run & step.waitForCondition
  * @alpha Using durables is considered experimental and may change in the future.
  * @hidden
  */
-export type DurableContext = FunctionContext & {
-  /**
-   * Current attempt of the active durable operation.
-   * Only available in methods that expose the attempt like `waitForCondition`
-   */
-  attempt?: number
-  /**
-   * Unique ID for a durable execution
-   */
-  runId?: string
+export interface DurableAttemptArgs extends DurableCallbackArgs {
+  /** Current attempt number, starting at 1. */
+  attempt: number
 }
 
 /**
@@ -308,7 +308,7 @@ export type DurableWaitForConditionDecision = {shouldContinue: true; delay: Dura
  */
 export interface DurableWaitForConditionOptions<T> {
   initial: T
-  next: (state: T, context: BaseDurableOperationArgs) => DurableWaitForConditionDecision
+  next: (state: T, attempt: number) => DurableWaitForConditionDecision
 }
 
 /**
@@ -333,11 +333,17 @@ export type DurableOperations = {
    * is not executed again. Failures are retried on their own.
    * similar to ctx.step()
    * @remarks cannot be nested inside another step
+   * @example
+   * ```ts
+   * step.run('run-step', async ({logger}) => {
+   *    logger.log('Running step')
+   * })
+   * ```
    * @param name - Step name
    * @param fn - function being executed
    * @returns The value returned by the executed function
    */
-  run<T>(name: string, fn: (args: DurableOperationArgs) => T | Promise<T>): Promise<T>
+  run<T>(name: string, fn: (args: DurableAttemptArgs) => T | Promise<T>): Promise<T>
 
   /**
    * Calls another function and awaits its result.
@@ -357,7 +363,7 @@ export type DurableOperations = {
    * @param fn - Receives the generated callbackId and returns a delivered promise
    * @returns The value returned by the executed function
    */
-  waitForCallback<T>(name: string, fn: (callbackId: string, args: BaseDurableOperationArgs) => Promise<void>): Promise<T>
+  waitForCallback<T>(name: string, fn: (callbackId: string, args: DurableCallbackArgs) => Promise<void>): Promise<T>
 
   /**
    * Waits for a specified duration
@@ -402,9 +408,10 @@ export type DurableOperations = {
    * ```ts
    * await step.waitForCondition(
    *   'waitForCondition',
-   *   async (state, {logger}) => {
-   *     logger.log('Checking for article')
+   *   async (state, {logger, attempt}) => {
+   *     logger.log('Checking for article', {attempt})
    *
+   *     // `context` is captured from the surrounding durable handler.
    *     const client = createClient({
    *       apiVersion: '2026-08-05',
    *       ...context.clientOptions,
@@ -418,13 +425,13 @@ export type DurableOperations = {
    *     initial: {
    *       article: null as Article | null,
    *     },
-   *     next: (state, context) => {
+   *     next: (state, attempt) => {
    *       if (state.article) return {shouldContinue: false}
    *
    *       return {
    *         shouldContinue: true,
    *         delay: {
-   *           seconds: Math.min((context.attempt ?? 1) * 2, 60),
+   *           seconds: Math.min(attempt * 2, 60),
    *         },
    *       }
    *     },
@@ -432,7 +439,7 @@ export type DurableOperations = {
    * )
    * ```
    * @param name - Step name
-   * @param fn - Called on each attempt with the current state and durable context.
+   * @param fn - Called on each attempt with the current state and condition context.
    * Returns a promise resolving to the updated state,
    * which is passed to next to determine whether the condition has been met or another check should be scheduled.
    * @param options - Configuration options for the condition
@@ -440,7 +447,7 @@ export type DurableOperations = {
    */
   waitForCondition<T>(
     name: string,
-    fn: (state: T, args: BaseDurableOperationArgs) => Promise<T>,
+    fn: (state: T, args: DurableAttemptArgs) => Promise<T>,
     options: DurableWaitForConditionOptions<T>,
   ): Promise<T>
 
@@ -451,9 +458,10 @@ export type DurableOperations = {
    * @example
    * ```ts
    * await step.waitForCondition(
-   *   async (state, {logger}) => {
-   *     logger.log('Checking for article')
+   *   async (state, {logger, attempt}) => {
+   *     logger.log('Checking for article', {attempt})
    *
+   *     // `context` is captured from the surrounding durable handler.
    *     const client = createClient({
    *       apiVersion: '2026-08-05',
    *       ...context.clientOptions,
@@ -467,26 +475,26 @@ export type DurableOperations = {
    *     initial: {
    *       article: null as Article | null,
    *     },
-   *     next: (state, context) => {
+   *     next: (state, attempt) => {
    *       if (state.article) return {shouldContinue: false}
    *
    *       return {
    *         shouldContinue: true,
    *         delay: {
-   *           seconds: Math.min((context.attempt ?? 1) * 2, 60),
+   *           seconds: Math.min(attempt * 2, 60),
    *         },
    *       }
    *     },
    *   },
    * )
    * ```
-   * @param fn - Called on each attempt with the current state and durable context.
+   * @param fn - Called on each attempt with the current state and condition context.
    * Returns a promise resolving to the updated state,
    * which is passed to next to determine whether the condition has been met or another check should be scheduled.
    * @param options - Configuration options for the condition
    * @returns The value returned by the executed function
    */
-  waitForCondition<T>(fn: (state: T, args: BaseDurableOperationArgs) => Promise<T>, options: DurableWaitForConditionOptions<T>): Promise<T>
+  waitForCondition<T>(fn: (state: T, args: DurableAttemptArgs) => Promise<T>, options: DurableWaitForConditionOptions<T>): Promise<T>
 }
 
 /**
