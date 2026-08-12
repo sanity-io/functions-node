@@ -1,5 +1,6 @@
+import {env} from 'node:process'
 import awsLite from '@aws-lite/client'
-import {beforeEach, describe, expect, test, vi} from 'vitest'
+import {afterEach, beforeEach, describe, expect, test, vi} from 'vitest'
 import type {BlueprintResource, FunctionContext, ResourcesApi} from '../src'
 import {MAX_RECURSION_COUNT} from '../src'
 import {buildLineageToken, genID, invoke} from '../src/invoke.js'
@@ -51,15 +52,19 @@ const defaultContext = {
     projectId: '5678',
     token: 'test-token',
   },
-  lineage: 'abc:1',
 }
-/** The lineage `defaultContext` should carry once `invoke` has advanced it. */
+/** The env var the runtime uses to hand the caller's lineage token to the function. */
+const LINEAGE_ENV = 'X_SANITY_LINEAGE'
+/** The lineage the calling function is running under, as the runtime would set it. */
+const CALLER_LINEAGE = 'abc:1'
+/** The lineage `invoke` should put on the wire, one level below `CALLER_LINEAGE`. */
 const NEXT_LINEAGE = 'abc:2'
 let context: FunctionContext = defaultContext
 
 /**
- * The payload `invoke` is expected to send: the caller's payload with the lineage
- * advanced. `invoke` copies rather than mutates, so the two are never the same object.
+ * The payload `invoke` is expected to send: the caller's payload with the lineage read
+ * from the environment and advanced. `invoke` copies rather than mutates, so the two
+ * are never the same object.
  */
 function outgoing<T extends {context: object}>(payload: T, lineage: string = NEXT_LINEAGE): T {
   return {...payload, context: {...payload.context, lineage}}
@@ -67,8 +72,14 @@ function outgoing<T extends {context: object}>(payload: T, lineage: string = NEX
 
 beforeEach(() => {
   awsLite.testing.reset()
+  // The runtime, not the caller, tells a function what lineage it is running under
+  vi.stubEnv(LINEAGE_ENV, CALLER_LINEAGE)
   // Each test gets its own copy
   context = {...defaultContext}
+})
+
+afterEach(() => {
+  vi.unstubAllEnvs()
 })
 
 describe('invoke', () => {
@@ -481,38 +492,46 @@ describe('invoke lineage', () => {
     return JSON.parse(request.Message)
   }
 
-  test('adds a lineage token when the context has none', async () => {
-    const bare: FunctionContext = {...defaultContext}
-    delete bare.lineage
+  test('starts a new lineage when the environment has none', async () => {
+    vi.stubEnv(LINEAGE_ENV, undefined)
 
-    const sent = await publish({event: {data: {}}, context: bare})
-
-    expect(sent.context.lineage).toMatch(/^[2-9a-z]{32}:1$/)
-    expect(bare.lineage).toBeUndefined()
-  })
-
-  test('increments the lineage token when the context already has one', async () => {
     const sent = await publish({event: {data: {}}, context})
 
-    expect(sent.context.lineage).toBe('abc:2')
+    expect(sent.context.lineage).toMatch(/^[2-9a-z]{32}:1$/)
   })
 
-  test('leaves the caller context untouched', async () => {
+  test('increments the lineage token the environment carries', async () => {
+    const sent = await publish({event: {data: {}}, context})
+
+    expect(sent.context.lineage).toBe(NEXT_LINEAGE)
+  })
+
+  test('ignores a lineage token on the incoming context', async () => {
+    // The runtime no longer populates `context.lineage`, so a stale one must not win over the env var
+    const stale = {...defaultContext, lineage: 'stale:9'}
+
+    const sent = await publish({event: {data: {}}, context: stale})
+
+    expect(sent.context.lineage).toBe(NEXT_LINEAGE)
+  })
+
+  test('leaves the caller context and environment untouched', async () => {
     const payload = {event: {data: {}}, context}
 
     const sent = await publish(payload)
 
-    expect(sent.context.lineage).toBe('abc:2')
-    expect(payload.context.lineage).toBe('abc:1')
+    expect(sent.context.lineage).toBe(NEXT_LINEAGE)
     expect(payload.context).toBe(context)
+    expect('lineage' in payload.context).toBe(false)
+    expect(env[LINEAGE_ENV]).toBe(CALLER_LINEAGE)
   })
 
   test('gives sibling invokes the same depth', async () => {
     const payload = {event: {data: {}}, context}
 
     // Both children are one level below the caller, so both are at depth 2
-    expect((await publish(payload)).context.lineage).toBe('abc:2')
-    expect((await publish(payload)).context.lineage).toBe('abc:2')
+    expect((await publish(payload)).context.lineage).toBe(NEXT_LINEAGE)
+    expect((await publish(payload)).context.lineage).toBe(NEXT_LINEAGE)
   })
 
   test('does not trip the recursion limit on a flat fan-out', async () => {
@@ -520,7 +539,7 @@ describe('invoke lineage', () => {
 
     // Fanning out to more than MAX_RECURSION_COUNT children involves no recursion at all
     for (let i = 0; i < MAX_RECURSION_COUNT + 4; i++) {
-      expect((await publish(payload)).context.lineage).toBe('abc:2')
+      expect((await publish(payload)).context.lineage).toBe(NEXT_LINEAGE)
     }
   })
 
@@ -533,7 +552,7 @@ describe('invoke lineage', () => {
     await invoke(fnName, {event: {data: {}}, context: contextForType(SANITY_FUNCTION_QUEUE)})
 
     const {request} = awsLite.testing.getLastRequest('SQS.SendMessage')
-    expect(JSON.parse(request.MessageBody).context.lineage).toBe('abc:2')
+    expect(JSON.parse(request.MessageBody).context.lineage).toBe(NEXT_LINEAGE)
   })
 
   test('forwards the lineage token to a synchronous Lambda invoke', async () => {
@@ -545,7 +564,7 @@ describe('invoke lineage', () => {
     await invoke(fnName, {event: {data: {}}, context}, {sync: true})
 
     const {request} = awsLite.testing.getLastRequest('Lambda.Invoke')
-    expect(request.Payload.context.lineage).toBe('abc:2')
+    expect(request.Payload.context.lineage).toBe(NEXT_LINEAGE)
   })
 
   test('forwards the lineage token to the local invoke handler', async () => {
@@ -554,20 +573,21 @@ describe('invoke lineage', () => {
 
     await invoke(fnName, payload)
 
-    expect(localInvoke.mock.calls[0][1].context.lineage).toBe('abc:2')
+    expect(localInvoke.mock.calls[0][1].context.lineage).toBe(NEXT_LINEAGE)
   })
 
   test('rejects and skips the invoke once the recursion limit is hit', async () => {
-    await expect(invoke(fnName, {event: {data: {}}, context: {...context, lineage: `abc:${MAX_RECURSION_COUNT}`}})).rejects.toThrow(
-      MAX_RECURSION_ERROR,
-    )
+    vi.stubEnv(LINEAGE_ENV, `abc:${MAX_RECURSION_COUNT}`)
+
+    await expect(invoke(fnName, {event: {data: {}}, context})).rejects.toThrow(MAX_RECURSION_ERROR)
     expect(awsLite.testing.getAllRequests('DynamoDB.GetItem')).toBeUndefined()
     expect(awsLite.testing.getAllRequests('SNS.Publish')).toBeUndefined()
   })
 
   test('rejects before invoking a local function once the recursion limit is hit', async () => {
+    vi.stubEnv(LINEAGE_ENV, `abc:${MAX_RECURSION_COUNT}`)
     const localInvoke = vi.fn()
-    const payload = {event: {data: {}}, context: {...context, lineage: `abc:${MAX_RECURSION_COUNT}`, local: true, invoke: localInvoke}}
+    const payload = {event: {data: {}}, context: {...context, local: true, invoke: localInvoke}}
 
     await expect(invoke(fnName, payload)).rejects.toThrow(MAX_RECURSION_ERROR)
     expect(localInvoke).not.toHaveBeenCalled()
