@@ -1,6 +1,6 @@
 {
   "name": "@sanity/functions",
-  "version": "1.6.4",
+  "version": "1.6.5",
   "description": "Helper methods and type definitions for Sanity Functions",
   "keywords": [
     "sanity",
