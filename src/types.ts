@@ -303,6 +303,39 @@ export type DurableDuration =
 export type DurableWaitForConditionDecision = {shouldRetry: true; delay: DurableDuration} | {shouldRetry: false}
 
 /**
+ * @alpha Using durables is considered experimental and may change in the future.
+ * @hidden
+ */
+export type DurableStepHandler<TArgs extends unknown[], TReturn> = (...args: TArgs) => TReturn
+
+/**
+ * @alpha Using durables is considered experimental and may change in the future.
+ * @hidden
+ */
+export type DurableStepRunHandler<T = unknown> = DurableStepHandler<[context: DurableStepAttemptContext], T | Promise<T>>
+
+/**
+ * @alpha Using durables is considered experimental and may change in the future.
+ * @hidden
+ */
+export type DurableStepWaitForCallbackHandler = DurableStepHandler<[callbackId: string, context: DurableStepCallbackContext], Promise<void>>
+
+/**
+ * @alpha Using durables is considered experimental and may change in the future.
+ * @hidden
+ */
+export type DurableWaitForConditionPoller<T = unknown> = DurableStepHandler<[state: T, context: DurableStepAttemptContext], Promise<T>>
+
+/**
+ * @alpha Using durables is considered experimental and may change in the future.
+ * @hidden
+ */
+export type DurableWaitForConditionNext<T = unknown> = DurableStepHandler<
+  [state: T, context: Pick<DurableStepAttemptContext, 'attempt'>],
+  DurableWaitForConditionDecision
+>
+
+/**
  * The interface defining the operations available to a durable function.
  * These operations are steps that delegate to other functions, and wait for external callbacks.
  * @alpha Using durables is considered experimental and may change in the future.
@@ -326,7 +359,7 @@ export type DurableOperations = {
    * @param handler - function being executed
    * @returns The value returned by the executed function
    */
-  run<T>({name, handler}: {name?: string; handler: (context: DurableStepAttemptContext) => T | Promise<T>}): Promise<T>
+  run<T>({name, handler}: {name?: string; handler: DurableStepRunHandler<T>}): Promise<T>
 
   /**
    * Calls another function and awaits its result.
@@ -346,13 +379,7 @@ export type DurableOperations = {
    * @param handler - Receives the generated callbackId and returns a delivered promise
    * @returns The value returned by the executed function
    */
-  waitForCallback<T>({
-    name,
-    handler,
-  }: {
-    name?: string
-    handler: (callbackId: string, context: DurableStepCallbackContext) => Promise<void>
-  }): Promise<T>
+  waitForCallback<T>({name, handler}: {name?: string; handler: DurableStepWaitForCallbackHandler}): Promise<T>
 
   /**
    * Waits for a specified duration
@@ -424,8 +451,8 @@ export type DurableOperations = {
   }: {
     name?: string
     initial: T
-    poller: (state: T, context: DurableStepAttemptContext) => Promise<T>
-    next: (state: T, context: Pick<DurableStepAttemptContext, 'attempt'>) => DurableWaitForConditionDecision
+    poller: DurableWaitForConditionPoller<T>
+    next: DurableWaitForConditionNext<T>
   }): Promise<T>
 }
 
