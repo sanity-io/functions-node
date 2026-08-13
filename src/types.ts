@@ -385,7 +385,7 @@ export type DurableOperations = {
    *     initial: {
    *       article: null,
    *     },
-   *     poller: async (state, {logger, attempt}) => {
+   *     poller: async (state, {attempt}) => {
    *         const client = createClient({
    *            apiVersion: '2026-08-05',
    *            ...context.clientOptions,
@@ -395,7 +395,7 @@ export type DurableOperations = {
    *          )
    *         return {...state, article}
    *     }
-   *     next: (state, attempt) => {
+   *     next: (state, {attempt}) => {
    *       if (state.article) return {shouldResume: false}
    *
    *       return {
@@ -425,7 +425,7 @@ export type DurableOperations = {
     name?: string
     initial: T
     poller: (state: T, context: DurableStepAttemptContext) => Promise<T>
-    next: (state: T, context: DurableStepAttemptContext) => Promise<T>
+    next: (state: T, context: Pick<DurableStepAttemptContext, 'attempt'>) => DurableWaitForConditionDecision
   }): Promise<T>
 }
 

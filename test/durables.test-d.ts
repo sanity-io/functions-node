@@ -1,13 +1,12 @@
 import {assertType, describe, expectTypeOf, test} from 'vitest'
 import type {
-  DurableAttemptArgs,
-  DurableCallbackArgs,
   DurableContext,
   DurableDuration,
   DurableLogger,
   DurableOperations,
+  DurableStepAttemptContext,
+  DurableStepCallbackContext,
   DurableWaitForConditionDecision,
-  DurableWaitForConditionOptions,
   FunctionContext,
 } from '../src'
 
@@ -85,19 +84,25 @@ describe('DurableDuration', () => {
 
 describe('DurableOperations.run', () => {
   test('provides DurableContext and infers the result', () => {
-    const result = step.run('load-article', (args) => {
-      expectTypeOf(args).toEqualTypeOf<DurableAttemptArgs>()
-      expectTypeOf(args.attempt).toEqualTypeOf<number>()
-      args.logger.info('Loading article')
+    const result = step.run({
+      name: 'load-article',
+      handler: (ctx) => {
+        expectTypeOf(ctx).toEqualTypeOf<DurableStepAttemptContext>()
+        expectTypeOf(ctx.attempt).toEqualTypeOf<number>()
+        ctx.logger.info('Loading article')
 
-      return {id: 'article-id' as string}
+        return {id: 'article-id' as string}
+      },
     })
 
     expectTypeOf(result).toEqualTypeOf<Promise<{id: string}>>()
   })
 
   test('continues accepting callbacks that ignore context', () => {
-    const result = step.run('return-value', () => 42)
+    const result = step.run({
+      name: 'return-value',
+      handler: () => 42,
+    })
 
     expectTypeOf(result).toEqualTypeOf<Promise<number>>()
   })
@@ -105,26 +110,29 @@ describe('DurableOperations.run', () => {
 
 describe('DurableOperations.wait', () => {
   test('accepts a named AWS duration and resolves void', () => {
-    const result = step.wait('rate-limit', {minutes: 1})
+    const result = step.wait({name: 'rate-limit', duration: {minutes: 1}})
 
     expectTypeOf(result).toEqualTypeOf<Promise<void>>()
   })
 
   test('rejects unsupported calls', () => {
     // @ts-expect-error numeric durations are unsupported
-    step.wait('delay', 30)
+    step.wait({name: 'delay', duration: 30})
 
     // @ts-expect-error empty duration is unsupported
-    step.wait('delay', {})
+    step.wait({name: 'delay', duration: {}})
   })
 })
 
 describe('DurableOperations.waitForCallback', () => {
-  test('provides callback ID and DurableCallbackArgs', () => {
-    const result = step.waitForCallback<{approved: boolean}>('approval', async (callbackId, args) => {
-      expectTypeOf(callbackId).toEqualTypeOf<string>()
-      expectTypeOf(args).toEqualTypeOf<DurableCallbackArgs>()
-      args.logger.info('Submitting approval request', callbackId)
+  test('provides callback ID and DurableStepCallbackContext', () => {
+    const result = step.waitForCallback<{approved: boolean}>({
+      name: 'approval',
+      handler: async (callbackId, ctx) => {
+        expectTypeOf(callbackId).toEqualTypeOf<string>()
+        expectTypeOf(ctx).toEqualTypeOf<DurableStepCallbackContext>()
+        ctx.logger.info('Submitting approval request', callbackId)
+      },
     })
 
     expectTypeOf(result).toEqualTypeOf<Promise<{approved: boolean}>>()
@@ -133,62 +141,64 @@ describe('DurableOperations.waitForCallback', () => {
 
 describe('DurableOperations.waitForCondition', () => {
   test('carries the same state through the full contract', () => {
-    const result = step.waitForCondition<ArticleState>(
-      'wait-for-article',
-      async (state, args) => {
+    const result = step.waitForCondition<ArticleState>({
+      name: 'wait-for-article',
+      initial: {article: null},
+      poller: async (state, ctx) => {
         expectTypeOf(state).toEqualTypeOf<ArticleState>()
-        expectTypeOf(args.logger).toEqualTypeOf<DurableLogger>()
-        expectTypeOf(args.attempt).toEqualTypeOf<number>()
+        expectTypeOf(ctx.logger).toEqualTypeOf<DurableLogger>()
+        expectTypeOf(ctx.attempt).toEqualTypeOf<number>()
 
         return {
           ...state,
           article: {_id: 'article-id', title: 'Article'},
         }
       },
-      {
-        initial: {
-          article: null,
-        },
-        next: (state, attempt) => {
-          expectTypeOf(state).toEqualTypeOf<ArticleState>()
-          expectTypeOf(attempt).toEqualTypeOf<number>()
+      next: (state, {attempt}) => {
+        expectTypeOf(state).toEqualTypeOf<ArticleState>()
+        expectTypeOf(attempt).toEqualTypeOf<number>()
 
-          if (state.article) {
-            return {shouldContinue: false}
-          }
+        if (state.article) {
+          return {shouldRetry: false}
+        }
 
-          return {
-            shouldContinue: true,
-            delay: {seconds: attempt},
-          }
-        },
+        return {
+          shouldRetry: true,
+          delay: {seconds: attempt},
+        }
       },
-    )
+    })
     expectTypeOf(result).toEqualTypeOf<Promise<ArticleState>>()
   })
 
   test('accepts both decision branches', () => {
     assertType<DurableWaitForConditionDecision>({
-      shouldContinue: false,
+      shouldRetry: false,
     })
 
     assertType<DurableWaitForConditionDecision>({
-      shouldContinue: true,
+      shouldRetry: true,
       delay: {seconds: 5},
     })
   })
 
-  test('rejects an incomplete continue decision', () => {
-    const invalidNext = () => ({
-      shouldContinue: true as const,
-    })
-
-    const options: DurableWaitForConditionOptions<ArticleState> = {
+  test('next must not return a promise', () => {
+    step.waitForCondition<ArticleState>({
+      name: 'wait-for-article',
       initial: {article: null},
-      // @ts-expect-error continuing requires a delay
-      next: invalidNext,
-    }
-
-    expectTypeOf(options).toExtend<DurableWaitForConditionOptions<ArticleState>>()
+      poller: async (state, _ctx) => {
+        return {
+          ...state,
+          article: {_id: 'article-id', title: 'Article'},
+        }
+      },
+      // @ts-expect-error - testing fail
+      next: (_state, {_attempt}) => {
+        assertType<DurableWaitForConditionDecision>(
+          // @ts-expect-error next must return a decision synchronously, not a promise
+          Promise.resolve({shouldRetry: false}),
+        )
+      },
+    })
   })
 })
