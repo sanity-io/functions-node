@@ -269,7 +269,7 @@ export interface DurableLogger {
  * @alpha Using durables is considered experimental and may change in the future.
  * @hidden
  */
-export interface DurableCallbackArgs {
+export interface DurableStepCallbackContext {
   logger: DurableLogger
 }
 
@@ -279,7 +279,7 @@ export interface DurableCallbackArgs {
  * @alpha Using durables is considered experimental and may change in the future.
  * @hidden
  */
-export interface DurableAttemptArgs extends DurableCallbackArgs {
+export interface DurableStepAttemptContext extends DurableStepCallbackContext {
   /** Current attempt number, starting at 1. */
   attempt: number
 }
@@ -300,16 +300,7 @@ export type DurableDuration =
  * @alpha Using durables is considered experimental and may change in the future.
  * @hidden
  */
-export type DurableWaitForConditionDecision = {shouldContinue: true; delay: DurableDuration} | {shouldContinue: false}
-
-/**
- * @alpha Using durables is considered experimental and may change in the future.
- * @hidden
- */
-export interface DurableWaitForConditionOptions<T> {
-  initial: T
-  next: (state: T, attempt: number) => DurableWaitForConditionDecision
-}
+export type DurableWaitForConditionDecision = {shouldRetry: true; delay: DurableDuration} | {shouldRetry: false}
 
 /**
  * The interface defining the operations available to a durable function.
@@ -325,15 +316,17 @@ export type DurableOperations = {
    * @remarks cannot be nested inside another step
    * @example
    * ```ts
-   * step.run('run-step', async ({logger}) => {
+   * step.run({
+   *   name: 'run-step',
+   *   handler: async ({logger}) => {
    *    logger.log('Running step')
-   * })
+   *  }})
    * ```
    * @param name - Step name
-   * @param fn - function being executed
+   * @param handler - function being executed
    * @returns The value returned by the executed function
    */
-  run<T>(name: string, fn: (args: DurableAttemptArgs) => T | Promise<T>): Promise<T>
+  run<T>({name, handler}: {name?: string; handler: (context: DurableStepAttemptContext) => T | Promise<T>}): Promise<T>
 
   /**
    * Calls another function and awaits its result.
@@ -343,17 +336,23 @@ export type DurableOperations = {
    * @param input - Data passed to the called function
    * @returns The value returned by the called function
    */
-  delegate<T>(name: string, input?: unknown): Promise<T>
+  delegate<T>({name, input}: {name?: string; input?: unknown}): Promise<T>
 
   /**
    * Waits for an external callback
    * similar to ctx.waitForCallback()
    * @remarks cannot be nested inside another step
    * @param name - Step name
-   * @param fn - Receives the generated callbackId and returns a delivered promise
+   * @param handler - Receives the generated callbackId and returns a delivered promise
    * @returns The value returned by the executed function
    */
-  waitForCallback<T>(name: string, fn: (callbackId: string, args: DurableCallbackArgs) => Promise<void>): Promise<T>
+  waitForCallback<T>({
+    name,
+    handler,
+  }: {
+    name?: string
+    handler: (callbackId: string, context: DurableStepCallbackContext) => Promise<void>
+  }): Promise<T>
 
   /**
    * Waits for a specified duration
@@ -362,33 +361,18 @@ export type DurableOperations = {
    * @example
    * Wait for 30 seconds
    * ```ts
-   * await step.wait('wait30Sec', { seconds: 30 });
+   * await step.wait({name: 'wait30Sec', duration: { seconds: 30 }});
    * ```
    * Wait for 2 days and 3 hours
    * ```ts
-   * await step.wait('waitALongTime', { days: 2, hours: 3 });
+   * await step.wait({name: 'waitALongTime', duration: { days: 2, hours: 3 }});
    * ```
    * @param name - Step name
    * @param duration - Amount of time the function will wait before continuing.
    * Duration is an object with properties of `seconds`, `minutes`, `hours`, or `days`. Must be at least {seconds: 1}
    * @returns Resolves after the duration
    */
-  wait(name: string, duration: DurableDuration): Promise<void>
-
-  /**
-   * Waits for a specified duration
-   * similar to ctx.wait()
-   * @remarks cannot be nested inside another step
-   * @example
-   * Wait for 30 seconds
-   * ```ts
-   * await step.wait({ seconds: 30 });
-   * ```
-   * @param duration - Amount of time the function will wait before continuing.
-   * Duration is an object with properties of `seconds`, `minutes`, `hours`, or `days`. Must be at least {seconds: 1}
-   * @returns Resolves after the duration
-   */
-  wait(duration: DurableDuration): Promise<void>
+  wait({name, duration}: {name?: string; duration: DurableDuration}): Promise<void>
 
   /**
    * Waits for a specified condition to be met
@@ -396,30 +380,26 @@ export type DurableOperations = {
    * @remarks cannot be nested inside another step
    * @example
    * ```ts
-   * await step.waitForCondition(
-   *   'waitForCondition',
-   *   async (state, {logger, attempt}) => {
-   *     logger.log('Checking for article', {attempt})
-   *
-   *     // `context` is captured from the surrounding durable handler.
-   *     const client = createClient({
-   *       apiVersion: '2026-08-05',
-   *       ...context.clientOptions,
-   *     })
-   *     const article = await client.fetch<Article | null>(
-   *       '*[_type == "article"][0]',
-   *     )
-   *     return {...state, article}
-   *   },
-   *   {
+   * await step.waitForCondition({{
+   *     name: 'waitForCondition',
    *     initial: {
-   *       article: null as Article | null,
+   *       article: null,
    *     },
+   *     poller: async (state, {logger, attempt}) => {
+   *         const client = createClient({
+   *            apiVersion: '2026-08-05',
+   *            ...context.clientOptions,
+   *          })
+   *          const article = await client.fetch<Article | null>(
+   *            '*[_type == "article"][0]',
+   *          )
+   *         return {...state, article}
+   *     }
    *     next: (state, attempt) => {
-   *       if (state.article) return {shouldContinue: false}
+   *       if (state.article) return {shouldResume: false}
    *
    *       return {
-   *         shouldContinue: true,
+   *         shouldResume: true,
    *         delay: {
    *           seconds: Math.min(attempt * 2, 60),
    *         },
@@ -429,62 +409,24 @@ export type DurableOperations = {
    * )
    * ```
    * @param name - Step name
-   * @param fn - Called on each attempt with the current state and condition context.
+   * @param initial - Initial state passed to the first poller call.
+   * @param poller - Called on each attempt with the current state and condition context.
+   * @param next - A function that determines whether the condition has been met or another check should be run.
    * Returns a promise resolving to the updated state,
-   * which is passed to next to determine whether the condition has been met or another check should be scheduled.
-   * @param options - Configuration options for the condition
+   * which is passed to next to determine whether the condition has been met or another check should be run.
    * @returns The value returned by the executed function
    */
-  waitForCondition<T>(
-    name: string,
-    fn: (state: T, args: DurableAttemptArgs) => Promise<T>,
-    options: DurableWaitForConditionOptions<T>,
-  ): Promise<T>
-
-  /**
-   * Waits for a specified condition to be met
-   * similar to ctx.waitForCondition()
-   * @remarks cannot be nested inside another step
-   * @example
-   * ```ts
-   * await step.waitForCondition(
-   *   async (state, {logger, attempt}) => {
-   *     logger.log('Checking for article', {attempt})
-   *
-   *     // `context` is captured from the surrounding durable handler.
-   *     const client = createClient({
-   *       apiVersion: '2026-08-05',
-   *       ...context.clientOptions,
-   *     })
-   *     const article = await client.fetch<Article | null>(
-   *       '*[_type == "article"][0]',
-   *     )
-   *     return {...state, article}
-   *   },
-   *   {
-   *     initial: {
-   *       article: null as Article | null,
-   *     },
-   *     next: (state, attempt) => {
-   *       if (state.article) return {shouldContinue: false}
-   *
-   *       return {
-   *         shouldContinue: true,
-   *         delay: {
-   *           seconds: Math.min(attempt * 2, 60),
-   *         },
-   *       }
-   *     },
-   *   },
-   * )
-   * ```
-   * @param fn - Called on each attempt with the current state and condition context.
-   * Returns a promise resolving to the updated state,
-   * which is passed to next to determine whether the condition has been met or another check should be scheduled.
-   * @param options - Configuration options for the condition
-   * @returns The value returned by the executed function
-   */
-  waitForCondition<T>(fn: (state: T, args: DurableAttemptArgs) => Promise<T>, options: DurableWaitForConditionOptions<T>): Promise<T>
+  waitForCondition<T>({
+    name,
+    initial,
+    next,
+    poller,
+  }: {
+    name?: string
+    initial: T
+    poller: (state: T, context: DurableStepAttemptContext) => Promise<T>
+    next: (state: T, context: DurableStepAttemptContext) => Promise<T>
+  }): Promise<T>
 }
 
 /**
