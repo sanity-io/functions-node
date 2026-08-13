@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.6.6](https://github.com/sanity-io/functions-node/compare/v1.6.5...v1.6.6) (2026-08-13)
+
+
+### Bug Fixes
+
+* align types to methods and args ([#52](https://github.com/sanity-io/functions-node/issues/52)) ([9d109a3](https://github.com/sanity-io/functions-node/commit/9d109a33042ebb9eaf86c6d7ac20a130a676cc4e))
+
 ## [1.6.5](https://github.com/sanity-io/functions-node/compare/v1.6.4...v1.6.5) (2026-08-12)
 
 
