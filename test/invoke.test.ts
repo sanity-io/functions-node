@@ -1,7 +1,7 @@
 import {env} from 'node:process'
 import awsLite from '@aws-lite/client'
 import {afterEach, beforeEach, describe, expect, test, vi} from 'vitest'
-import type {BlueprintResource, FunctionContext, ResourcesApi} from '../src'
+import type {BlueprintResource, FunctionContext, GenericEvent, ResourcesApi} from '../src'
 import {MAX_RECURSION_COUNT} from '../src'
 import {buildLineageToken, genID, invoke} from '../src/invoke.js'
 
@@ -150,12 +150,22 @@ describe('invoke', () => {
     expect(awsLite.testing.getAllRequests('SNS.Publish')).toBeUndefined()
   })
 
-  test('invoke calls local function', async () => {
+  test('invoke calls local function with the event data alone', async () => {
     const localInvoke = vi.fn()
     const payload = {event: {data: {hello: 'world'}}, context: {...context, local: true, invoke: localInvoke}}
     await invoke(fnName, payload)
 
-    expect(localInvoke).toHaveBeenCalledWith(fnName, outgoing(payload), undefined)
+    // The CLI delivers what it is given as the target's `event.data` and builds the
+    // target's context itself, so the envelope must not be passed along
+    expect(localInvoke).toHaveBeenCalledWith(fnName, {hello: 'world'}, undefined)
+  })
+
+  test('invoke hands the local function an empty payload when the event carries no data', async () => {
+    const localInvoke = vi.fn()
+    const payload = {event: {} as GenericEvent, context: {...context, local: true, invoke: localInvoke}}
+    await invoke(fnName, payload)
+
+    expect(localInvoke).toHaveBeenCalledWith(fnName, {}, undefined)
   })
 
   test('invoke forwards options to the local function', async () => {
@@ -163,7 +173,7 @@ describe('invoke', () => {
     const payload = {event: {data: {hello: 'world'}}, context: {...context, local: true, invoke: localInvoke}}
     await invoke(fnName, payload, {sync: true})
 
-    expect(localInvoke).toHaveBeenCalledWith(fnName, outgoing(payload), {sync: true})
+    expect(localInvoke).toHaveBeenCalledWith(fnName, {hello: 'world'}, {sync: true})
   })
 
   test('invoke returns the local function result when invoked synchronously', async () => {
@@ -567,13 +577,15 @@ describe('invoke lineage', () => {
     expect(request.Payload.context.lineage).toBe(NEXT_LINEAGE)
   })
 
-  test('forwards the lineage token to the local invoke handler', async () => {
+  test('does not send a context to the local invoke handler', async () => {
+    // Locally the Sanity CLI derives the target's context, lineage included, from the
+    // calling function's own context, so there is nothing for us to forward
     const localInvoke = vi.fn()
-    const payload = {event: {data: {}}, context: {...context, local: true, invoke: localInvoke}}
+    const payload = {event: {data: {hello: 'world'}}, context: {...context, local: true, invoke: localInvoke}}
 
     await invoke(fnName, payload)
 
-    expect(localInvoke.mock.calls[0][1].context.lineage).toBe(NEXT_LINEAGE)
+    expect(localInvoke.mock.calls[0][1]).toEqual({hello: 'world'})
   })
 
   test('rejects and skips the invoke once the recursion limit is hit', async () => {

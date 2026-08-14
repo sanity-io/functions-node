@@ -151,7 +151,7 @@ export async function invoke<T = unknown>(name: string, payload: FunctionPayload
     if (!outgoingPayload?.context?.invoke) {
       throw new Error(`No local invoke handler configured for function: ${name}`)
     }
-    return await outgoingPayload.context.invoke(name, outgoingPayload, options)
+    return await outgoingPayload.context.invoke(name, outgoingPayload.event?.data ?? {}, options)
   }
 
   const aws = await getAwsLite()
