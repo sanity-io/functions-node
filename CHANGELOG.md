@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.6.7](https://github.com/sanity-io/functions-node/compare/v1.6.6...v1.6.7) (2026-08-14)
+
+
+### Bug Fixes
+
+* nested invoke payload wrapping in local functions runtime ([#58](https://github.com/sanity-io/functions-node/issues/58)) ([3eb6a0c](https://github.com/sanity-io/functions-node/commit/3eb6a0cd9800b4a1ad8b9ae72a97f1427c2be916))
+
 ## [1.6.6](https://github.com/sanity-io/functions-node/compare/v1.6.5...v1.6.6) (2026-08-13)
 
 
