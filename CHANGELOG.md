@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.6.8](https://github.com/sanity-io/functions-node/compare/v1.6.7...v1.6.8) (2026-08-17)
+
+
+### Bug Fixes
+
+* need to bump release-please ([#60](https://github.com/sanity-io/functions-node/issues/60)) ([947b8c3](https://github.com/sanity-io/functions-node/commit/947b8c36cdcb412167e5eef45a1613491fd3e070))
+
 ## [1.6.7](https://github.com/sanity-io/functions-node/compare/v1.6.6...v1.6.7) (2026-08-14)
 
 
