@@ -205,10 +205,10 @@ export type SyncTagInvalidateEventHandler = (envelope: {
 /**
  * An interface to describe resources found in a Blueprint
  */
-export interface BlueprintResource {
+export interface BlueprintResource<TType extends string = string> {
   id: string
   name: string
-  type: string
+  type: TType
 }
 export interface ResourcesApi {
   /** Cross-type lookup by name: `context.resources('my-proj')`. */
@@ -220,7 +220,7 @@ export interface ResourcesApi {
   /** Type specific lookup by name: `context.cors('my-cors')` */
   cors(name: string): BlueprintResource | undefined
   dataset(name: string): BlueprintResource | undefined
-  function(name: string): BlueprintResource | undefined
+  function(name: string): BlueprintResource<`sanity.function.${string}`> | undefined
   project(name: string): BlueprintResource | undefined
   role(name: string): BlueprintResource | undefined
   webhook(name: string): BlueprintResource | undefined
@@ -369,10 +369,19 @@ export type DurableOperations = {
    * similar to ctx.invoke()
    * @remarks cannot be nested inside another step
    * @param name - Step name
+   * @param handler - Function to be invoked
    * @param input - Data passed to the called function
    * @returns The value returned by the called function
    */
-  delegate<T>({name, input}: {name?: string; input?: unknown}): Promise<T>
+  delegate<T>({
+    name,
+    handler,
+    input,
+  }: {
+    name?: string
+    handler: string | BlueprintResource<`sanity.function.${string}`>
+    input?: unknown
+  }): Promise<T>
 
   /**
    * Waits for an external callback
