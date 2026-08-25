@@ -51,6 +51,8 @@ const validateConfig = (config: unknown) => {
   return errors
 }
 
+export function retry() {}
+
 /**
  * Durables creation function that can be called with or without a config object.
  * @alpha Durables are an experimental feature and may change in the future.
