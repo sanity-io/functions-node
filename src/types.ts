@@ -210,6 +210,7 @@ export interface BlueprintResource<TType extends string = string> {
   name: string
   type: TType
 }
+
 export interface ResourcesApi {
   /** Cross-type lookup by name: `context.resources('my-proj')`. */
   (name: string): BlueprintResource | undefined
