@@ -25,11 +25,12 @@ describe('ResourcesApi', () => {
   })
 
   test('per-type lookup returns BlueprintResource | undefined for every known type', () => {
+    type FunctionLookup = (name: string) => BlueprintResource<`sanity.function.${string}`> | undefined
     type PerTypeLookup = (name: string) => BlueprintResource | undefined
 
     expectTypeOf<ResourcesApi['cors']>().toEqualTypeOf<PerTypeLookup>()
     expectTypeOf<ResourcesApi['dataset']>().toEqualTypeOf<PerTypeLookup>()
-    expectTypeOf<ResourcesApi['function']>().toEqualTypeOf<PerTypeLookup>()
+    expectTypeOf<ResourcesApi['function']>().toEqualTypeOf<FunctionLookup>()
     expectTypeOf<ResourcesApi['project']>().toEqualTypeOf<PerTypeLookup>()
     expectTypeOf<ResourcesApi['role']>().toEqualTypeOf<PerTypeLookup>()
     expectTypeOf<ResourcesApi['webhook']>().toEqualTypeOf<PerTypeLookup>()
@@ -37,7 +38,7 @@ describe('ResourcesApi', () => {
     const resources = {} as ResourcesApi
     expectTypeOf(resources.cors('my-cors')).toEqualTypeOf<BlueprintResource | undefined>()
     expectTypeOf(resources.dataset('my-dataset')).toEqualTypeOf<BlueprintResource | undefined>()
-    expectTypeOf(resources.function('my-function')).toEqualTypeOf<BlueprintResource | undefined>()
+    expectTypeOf(resources.function('my-function')).toEqualTypeOf<BlueprintResource<`sanity.function.${string}`> | undefined>()
     expectTypeOf(resources.project('my-proj')).toEqualTypeOf<BlueprintResource | undefined>()
     expectTypeOf(resources.role('my-role')).toEqualTypeOf<BlueprintResource | undefined>()
     expectTypeOf(resources.webhook('my-webhook')).toEqualTypeOf<BlueprintResource | undefined>()
