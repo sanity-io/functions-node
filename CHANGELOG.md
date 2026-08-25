@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.6.9](https://github.com/sanity-io/functions-node/compare/v1.6.8...v1.6.9) (2026-08-25)
+
+
+### Bug Fixes
+
+* **durables:** updating delegate types and limiting handler to a function ([#62](https://github.com/sanity-io/functions-node/issues/62)) ([c05f1e1](https://github.com/sanity-io/functions-node/commit/c05f1e1db259f58a4bd8e1742c3bac76fc9aecc0))
+
 ## [1.6.8](https://github.com/sanity-io/functions-node/compare/v1.6.7...v1.6.8) (2026-08-17)
 
 
