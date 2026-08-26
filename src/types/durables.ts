@@ -1,4 +1,5 @@
-import type {FunctionContext, GenericEvent} from '../types'
+import type {FunctionContext} from './context'
+import type {GenericEvent} from './functions'
 import type {BlueprintResource} from './resources'
 
 /**

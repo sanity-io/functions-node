@@ -1,4 +1,4 @@
-import type {InvokeCallback} from '../types'
+import type {InvokeCallback} from './invocation'
 import type {ResourcesApi} from './resources'
 
 /**

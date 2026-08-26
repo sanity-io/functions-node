@@ -10,7 +10,7 @@ import {
   type SyncTagInvalidateEventHandler,
   scheduledEventHandler,
   syncTagInvalidateEventHandler,
-} from '../src/index.js'
+} from '../src'
 
 describe('documentEventHandler', () => {
   test('passes through handler function verbatim', () => {
