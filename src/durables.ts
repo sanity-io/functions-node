@@ -51,7 +51,30 @@ const validateConfig = (config: unknown) => {
   return errors
 }
 
-export function retry() {}
+export function retry<T>(block: DurableRetryBlock<T>, config: DurableRetryStrategy): Promise<DurableRetryBlock<T>>
+export function retry<T>(name: string, block: DurableRetryBlock<T>, config: DurableRetryStrategy): Promise<DurableRetryBlock<T>>
+/**
+ * Retry wrapper for Durable operations that don't support
+ * @param nameOrBlock Name of the retry or the block of allowed durable operations that can be retried
+ * @param blockOrConfig
+ * @param maybeConfig - Retry
+ * @returns The block(s) being executed
+ */
+export async function retry<T>(
+  nameOrBlock: DurableRetryBlock<T> | string,
+  blockOrConfig: DurableRetryBlock<T> | DurableRetryStrategy,
+  maybeConfig?: DurableRetryStrategy,
+): Promise<DurableRetryBlock<T>> {
+  const hasName = typeof nameOrBlock === 'string'
+  const block = hasName ? blockOrConfig : nameOrBlock
+  const config = hasName ? maybeConfig : blockOrConfig
+
+  if (!config || typeof config !== 'object') {
+    throw new Error('`config` must be an object')
+  }
+
+  return block as DurableRetryBlock<T>
+}
 
 /**
  * Durables creation function that can be called with or without a config object.
