@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.7.1](https://github.com/sanity-io/functions-node/compare/v1.7.0...v1.7.1) (2026-08-27)
+
+
+### Bug Fixes
+
+* **types:** fix the extensions so types build correctly ([#67](https://github.com/sanity-io/functions-node/issues/67)) ([ba5583e](https://github.com/sanity-io/functions-node/commit/ba5583e28eac4139279e0c638c6b90b02a25178f))
+
 ## [1.7.0](https://github.com/sanity-io/functions-node/compare/v1.6.9...v1.7.0) (2026-08-27)
 
 
