@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.7.0](https://github.com/sanity-io/functions-node/compare/v1.6.9...v1.7.0) (2026-08-27)
+
+
+### Features
+
+* **durables:** add retry strategy and retry method ([#64](https://github.com/sanity-io/functions-node/issues/64)) ([001364f](https://github.com/sanity-io/functions-node/commit/001364fdc79d41439bc7553d4fe687758effa6f9))
+
+
+### Bug Fixes
+
+* **types:** seperate types by boundries ([#65](https://github.com/sanity-io/functions-node/issues/65)) ([fe9d3a7](https://github.com/sanity-io/functions-node/commit/fe9d3a78bbb4a6d981925bb6f1bf806b7a75e6d6))
+
 ## [1.6.9](https://github.com/sanity-io/functions-node/compare/v1.6.8...v1.6.9) (2026-08-25)
 
 
