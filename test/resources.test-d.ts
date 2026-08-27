@@ -1,5 +1,5 @@
 import {assertType, describe, expectTypeOf, test} from 'vitest'
-import type {BlueprintResource, ResourcesApi} from '../src'
+import type {BlueprintResource, ResourcesApi} from '../src/index.js'
 
 describe('ResourcesApi', () => {
   test('is callable for cross-type lookup by name', () => {

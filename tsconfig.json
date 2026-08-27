@@ -4,8 +4,8 @@
     "rootDir": "./src",
     "outDir": "./dist",
     "target": "es2024",
-    "module": "esnext",
-    "moduleResolution": "bundler",
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
     "types": ["node", "@aws-lite/dynamodb-types", "@aws-lite/lambda-types", "@aws-lite/sns-types", "@aws-lite/sqs-types"],
     "skipLibCheck": true,
     "sourceMap": true,
@@ -18,6 +18,5 @@
     "noFallthroughCasesInSwitch": true,
     "noPropertyAccessFromIndexSignature": true
   },
-  "exclude": ["node_modules", "dist"],
-  "include": ["src/**/*.ts"]
+  "include": ["src"]
 }

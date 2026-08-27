@@ -37,7 +37,7 @@
   "scripts": {
     "build": "rimraf dist .tsbuildinfo && tsc",
     "coverage": "vitest --coverage",
-    "docs:typedoc": "typedoc --options typedoc.json",
+    "docs:typedoc": "npx -y -p typescript@6 -p typedoc@0.28.20 typedoc --options typedoc.json",
     "docs:watch": "npm run docs:typedoc && open ./docs/html/index.html && npm run docs:typedoc -- --watch",
     "lint": "biome check .",
     "lint:write": "biome check --write .",
@@ -60,8 +60,7 @@
     "@types/node": "^22",
     "@vitest/coverage-v8": "4.1.10",
     "rimraf": "^6.1.2",
-    "typedoc": "^0.28.16",
-    "typescript": "^6.0.3",
+    "typescript": "^7.0.2",
     "vitest": "4.1.10"
   },
   "engines": {
@@ -76,5 +75,8 @@
     "@aws-lite/lambda": "^0.1.5",
     "@aws-lite/sns": "^0.0.8",
     "@aws-lite/sqs": "^0.2.4"
+  },
+  "allowScripts": {
+    "fsevents@2.3.3": true
   }
 }
