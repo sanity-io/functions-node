@@ -1,5 +1,5 @@
-import type {InvokeCallback} from './invocation'
-import type {ResourcesApi} from './resources'
+import type {InvokeCallback} from './invocation.js'
+import type {ResourcesApi} from './resources.js'
 
 /**
  * The context object passed to the function handler.

@@ -1,4 +1,4 @@
-import type {DurableHandler} from './types/durables'
+import type {DurableHandler} from './types/durables.js'
 
 /**
  * Determine if `createDurable({}, () => {})` or `createDurable(() => {})`.

@@ -1,4 +1,4 @@
-import type {FunctionContext, GenericContext, ScheduledFunctionContext, SyncTagInvalidateContext} from './context'
+import type {FunctionContext, GenericContext, ScheduledFunctionContext, SyncTagInvalidateContext} from './context.js'
 
 /**
  * The event object received by the function handler in the case of a document event,
