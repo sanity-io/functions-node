@@ -1,6 +1,6 @@
-import type {FunctionContext} from './context'
-import type {GenericEvent} from './functions'
-import type {BlueprintResource} from './resources'
+import type {FunctionContext} from './context.js'
+import type {GenericEvent} from './functions.js'
+import type {BlueprintResource} from './resources.js'
 
 /**
  * Durable alias of FunctionsContext
