@@ -54,6 +54,60 @@ export type DurableDuration =
   | {seconds: number}
 
 /**
+ * @alpha: Using durables is considered experimental and may change in the future.
+ * @hidden
+ */
+export type DurableJitterStrategy = 'none' | 'full' | 'half'
+
+/**
+ * @alpha: Using durables is considered experimental and may change in the future.
+ * @hidden
+ */
+export interface DurableRetryStrategy {
+  maxAttempts?: number
+  initialDelay?: DurableDuration
+  maxDelay?: DurableDuration
+  backoffRate?: number
+  jitter?: DurableJitterStrategy
+  retryableErrors?: (string | RegExp)[]
+  retryableErrorTypes?: (new () => Error)[]
+}
+
+/**
+ * @alpha: Using durables is considered experimental and may change in the future.
+ * @hidden
+ */
+export type DurableStepSemantics = 'at-most-once-per-retry' | 'at-least-once-per-retry'
+
+/**
+ * @alpha: Using durables is considered experimental and may change in the future.
+ * @hidden
+ */
+export interface DurableStepConfig {
+  strategy?: DurableRetryStrategy
+  semantics?: DurableStepSemantics
+}
+
+/**
+ * Allowed operations in a retry code block
+ * @alpha: Using durables is considered experimental and may change in the future.
+ * @hidden
+ */
+export type DurableRetryOperations = Pick<DurableOperations, 'delegate' | 'waitForCallback' | 'waitForCondition'>
+
+/**
+ * @alpha: Using durables is considered experimental and may change in the future.
+ * @hidden
+ */
+export type DurableRetryBlock<T> = (envelope: {step: DurableRetryOperations; attempt: number}) => Promise<T>
+
+/**
+ * @alpha: Using durables is considered experimental and may change in the future.
+ * @hidden
+ */
+export type DurableRetry = <T>(name: string | undefined, config: DurableRetryStrategy, block: DurableRetryBlock<T>) => Promise<T>
+
+/**
  * @alpha Using durables is considered experimental and may change in the future.
  * @hidden
  */
@@ -112,16 +166,46 @@ export type DurableOperations = {
    *    logger.log('Running step')
    *  }})
    * ```
+   *
+   * @example
+   * ```ts
+   * // With a retry config
+   * step.run({
+   *   name: 'run-with-retry'
+   *   handler: () => { // handler code }
+   *   retry: { strategy: { maxAttempts: 2 } }
+   * })
+   * ```
    * @param name - Step name
    * @param handler - function being executed
+   * @param retry - retry configuration
    * @returns The value returned by the executed function
    */
-  run<T>({name, handler}: {name?: string; handler: DurableStepRunHandler<T>}): Promise<T>
-
+  run<T>({name, handler, retry}: {name?: string; handler: DurableStepRunHandler<T>; retry?: DurableStepConfig}): Promise<T>
   /**
    * Calls another function and awaits its result.
    * similar to ctx.invoke()
    * @remarks cannot be nested inside another step
+   * @example
+   * ```ts
+   * // my-delegated-function/index.ts
+   * export const handler = pubSubEventHandler({event}) => {
+   *    ...
+   * }
+   *
+   * // my-resource/index.ts
+   * export const handler = pubSubEventHandler({event}) => {
+   *    ...
+   * }
+   *
+   * // my-durable-function/index.ts
+   * createDurable(({step, context}) => {
+   *   // With a function name
+   *   step.delegate({name: 'my-function', handler: 'my-delegated-function', input: {}})
+   *   // With a resource object
+   *   step.delegate({name: 'another-function', handler: context.resource.function('my-resource'), input: {}})
+   * })
+   * ```
    * @param name - Step name
    * @param handler - Function to be invoked
    * @param input - Data passed to the called function
@@ -189,10 +273,10 @@ export type DurableOperations = {
    *         return {...state, article}
    *     }
    *     next: (state, {attempt}) => {
-   *       if (state.article) return {shouldResume: false}
+   *       if (state.article) return {shouldRetry: false}
    *
    *       return {
-   *         shouldResume: true,
+   *         shouldRetry: true,
    *         delay: {
    *           seconds: Math.min(attempt * 2, 60),
    *         },
@@ -231,4 +315,5 @@ export type DurableHandler = (envelope: {
   event?: GenericEvent
   step: DurableOperations
   logger: DurableLogger
+  retry: DurableRetry
 }) => unknown | Promise<unknown>
