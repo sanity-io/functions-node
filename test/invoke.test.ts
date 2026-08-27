@@ -2,8 +2,7 @@ import {env} from 'node:process'
 import awsLite from '@aws-lite/client'
 import {afterEach, beforeEach, describe, expect, test, vi} from 'vitest'
 import type {BlueprintResource, FunctionContext, GenericEvent, ResourcesApi} from '../src'
-import {MAX_RECURSION_COUNT} from '../src'
-import {buildLineageToken, genID, invoke} from '../src/invoke.js'
+import {buildLineageToken, genID, invoke, MAX_RECURSION_COUNT} from '../src'
 
 const fnName: string = 'my-fn'
 const MAX_RECURSION_ERROR = `Function ${fnName} exceeded the maximum recursion depth of ${MAX_RECURSION_COUNT}`

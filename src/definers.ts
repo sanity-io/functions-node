@@ -1,4 +1,4 @@
-import type {DocumentEventHandler, PubSubEventHandler, ScheduledEventHandler, SyncTagInvalidateEventHandler} from './types.js'
+import type {DocumentEventHandler, PubSubEventHandler, ScheduledEventHandler, SyncTagInvalidateEventHandler} from './types/functions'
 
 /**
  * Defines a "document event" function handler.

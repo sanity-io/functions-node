@@ -2,7 +2,8 @@ import {Buffer} from 'node:buffer'
 import crypto from 'node:crypto'
 import {env} from 'node:process'
 import type awsLite from '@aws-lite/client'
-import type {FunctionPayload, FunctionResourceEnvelope, InvokeOptions} from './types.js'
+import type {FunctionPayload, FunctionResourceEnvelope} from './types/functions'
+import type {InvokeOptions} from './types/invocation'
 
 let awsPromise: Promise<awsLite.AwsLiteClient> | undefined
 

@@ -1,6 +1,6 @@
 import {describe, expectTypeOf, test} from 'vitest'
 import type {FunctionPayload, ResourcesApi} from '../src'
-import {invoke} from '../src/invoke.js'
+import {invoke} from '../src'
 
 const payload = {event: {data: {hello: 'world'}}, context: {resources: {} as ResourcesApi}} as FunctionPayload
 
