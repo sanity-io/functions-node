@@ -11,7 +11,7 @@ import type {
   DurableWaitForConditionDecision,
   FunctionContext,
   GenericEvent,
-} from '../src'
+} from '../src/index.js'
 
 const context = {} as DurableContext
 const step = {} as DurableOperations

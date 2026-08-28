@@ -19,7 +19,7 @@ import {
   type SyncTagInvalidateEventHandler,
   scheduledEventHandler,
   syncTagInvalidateEventHandler,
-} from '../src'
+} from '../src/index.js'
 
 const mockResourcesApi = (resources: BlueprintResource[] = []): ResourcesApi => {
   const findByName = (name: string) => resources.find((r) => r.name === name)

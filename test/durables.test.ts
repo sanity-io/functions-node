@@ -1,5 +1,5 @@
 import {describe, expect, test} from 'vitest'
-import {createDurable, type DurableHandler} from '../src'
+import {createDurable, type DurableHandler} from '../src/index.js'
 
 describe('createDurable', () => {
   test('returns handler with config attached', () => {
