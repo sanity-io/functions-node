@@ -33,6 +33,34 @@ jobs:
       - run: npm run prepare
       - run: npm run typecheck
       - run: npm run lint
+        # verify the build output can be consumed downstream
+      - name: Verify packaged ESM and NodeNext declarations
+        shell: bash
+        run: |
+          TARBALL="$(npm pack --json | node -e 'let input = ""; process.stdin.on("data", chunk => input += chunk); process.stdin.on("end", () => console.log(JSON.parse(input)[0].filename))')"
+          TEMP_DIR="$(mktemp -d)"
+          tar -xzf "$TARBALL" -C "$TEMP_DIR"
+
+          # Catches extensionless imports in emitted JavaScript.
+          node --input-type=module --eval 'await import(process.argv[1])' \
+            "$TEMP_DIR/package/dist/index.js"
+
+          # Catches extensionless imports preserved in emitted .d.ts files.
+          mkdir "$TEMP_DIR/consumer"
+          node -e "
+            const fs = require('fs');
+            const dir = process.argv[1];
+            fs.writeFileSync(dir + '/index.ts', [
+              \"import type { DurableHandler, SyncTagInvalidateEventHandler } from '../package/dist/index.js'\",
+              'export type PublicApiCheck = { durable: DurableHandler; syncTagInvalidate: SyncTagInvalidateEventHandler }',
+            ].join('\\n'));
+            fs.writeFileSync(dir + '/tsconfig.json', JSON.stringify({
+              compilerOptions: { module: 'NodeNext', moduleResolution: 'NodeNext', target: 'ES2024', strict: true, skipLibCheck: false, noEmit: true },
+              files: ['index.ts']
+            }, null, 2));
+          " "$TEMP_DIR/consumer"
+
+          ./node_modules/.bin/tsc --project "$TEMP_DIR/consumer/tsconfig.json"
       - uses: actions/upload-artifact@v7
         name: Cache build output
         with:
