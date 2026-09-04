@@ -201,24 +201,24 @@ export type DurableOperations = {
    * // my-durable-function/index.ts
    * createDurable(({step, context}) => {
    *   // With a function name
-   *   step.delegate({name: 'my-function', handler: 'my-delegated-function', input: {}})
+   *   step.delegate({name: 'my-function', handler: 'my-delegated-function', event: {data: {hello: 'world'}}})
    *   // With a resource object
-   *   step.delegate({name: 'another-function', handler: context.resource.function('my-resource'), input: {}})
+   *   step.delegate({name: 'another-function', handler: context.resource.function('my-resource'), event: {data: {hello: 'world'}}})
    * })
    * ```
    * @param name - Step name
    * @param handler - Function to be invoked
-   * @param input - Data passed to the called function
+   * @param event - Data passed to the called function
    * @returns The value returned by the called function
    */
   delegate<T>({
     name,
     handler,
-    input,
+    event,
   }: {
     name?: string
     handler: string | BlueprintResource<`sanity.function.${string}`>
-    input?: unknown
+    event?: unknown
   }): Promise<T>
 
   /**
