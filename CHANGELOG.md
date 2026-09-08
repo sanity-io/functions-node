@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.7.2](https://github.com/sanity-io/functions-node/compare/v1.7.1...v1.7.2) (2026-09-04)
+
+
+### Bug Fixes
+
+* step.delegate uses `event` instead of `input` ([#71](https://github.com/sanity-io/functions-node/issues/71)) ([cd60464](https://github.com/sanity-io/functions-node/commit/cd604646a4a5666b7bb301fae1652c15ee80f809))
+
 ## [1.7.1](https://github.com/sanity-io/functions-node/compare/v1.7.0...v1.7.1) (2026-08-27)
 
 
