@@ -30,3 +30,6 @@ tsconfig.vitest-temp*
 
 # Docs output
 /docs
+
+# Scratch pad for temporary work
+/scratch
