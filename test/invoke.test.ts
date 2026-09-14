@@ -110,6 +110,31 @@ describe('invoke', () => {
     expect(request.MessageBody).toBe(JSON.stringify(outgoing(payload)))
   })
 
+  test('invoke gives a FIFO queue the message group it requires', async () => {
+    // SQS rejects a message to a FIFO queue without group id
+    awsLite.testing.mock('DynamoDB.GetItem', {
+      Item: {resources: {queue: {logicalResourceId: 'foo', physicalResourceId: 'https://my-queue.fifo'}}},
+    })
+    awsLite.testing.mock('SQS.SendMessage', {MessageId: 'm-1'})
+
+    await invoke(fnName, {event: {data: {}}, context: contextForType(SANITY_FUNCTION_QUEUE)})
+
+    const {request} = awsLite.testing.getLastRequest('SQS.SendMessage')
+    expect(request.QueueUrl).toBe('https://my-queue.fifo')
+    expect(request.MessageGroupId).toBe(fnName)
+  })
+
+  test('invoke leaves a standard queue without a message group', async () => {
+    awsLite.testing.mock('DynamoDB.GetItem', {
+      Item: {resources: {queue: {logicalResourceId: 'foo', physicalResourceId: 'https://my-queue'}}},
+    })
+    awsLite.testing.mock('SQS.SendMessage', {MessageId: 'm-1'})
+
+    await invoke(fnName, {event: {data: {}}, context: contextForType(SANITY_FUNCTION_QUEUE)})
+
+    expect(awsLite.testing.getLastRequest('SQS.SendMessage').request.MessageGroupId).toBeUndefined()
+  })
+
   test('invoke does not fall back to an async Lambda invoke', async () => {
     // An async invoke goes through the function's event source, never straight to the Lambda
     awsLite.testing.mock('DynamoDB.GetItem', {

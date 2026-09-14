@@ -186,10 +186,14 @@ export async function invoke<T = unknown>(name: string, payload: FunctionPayload
       Message: stringPayload,
     })
   } else if (resource.queue && functionType === 'sanity.function.queue') {
-    await aws.SQS.SendMessage({
+    const queueUrl = resource.queue.physicalResourceId
+    const message: {MessageBody: string; MessageGroupId?: string; QueueUrl: string} = {
       MessageBody: stringPayload,
-      QueueUrl: resource.queue.physicalResourceId,
-    })
+      QueueUrl: queueUrl,
+    }
+    // A FIFO queue rejects a message without a `MessageGroupId`
+    if (queueUrl.endsWith('.fifo')) message.MessageGroupId = name
+    await aws.SQS.SendMessage(message)
   } else {
     throw new Error(`No invokeable resource for function: ${name}`)
   }
