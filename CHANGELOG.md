@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.7.3](https://github.com/sanity-io/functions-node/compare/v1.7.2...v1.7.3) (2026-09-14)
+
+
+### Bug Fixes
+
+* fifo message group id ([#73](https://github.com/sanity-io/functions-node/issues/73)) ([ff89730](https://github.com/sanity-io/functions-node/commit/ff897301c0276b0d512057fd1cf2687daa77a5dc))
+
 ## [1.7.2](https://github.com/sanity-io/functions-node/compare/v1.7.1...v1.7.2) (2026-09-04)
 
 
