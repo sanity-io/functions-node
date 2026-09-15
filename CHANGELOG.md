@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.7.4](https://github.com/sanity-io/functions-node/compare/v1.7.3...v1.7.4) (2026-09-15)
+
+
+### Bug Fixes
+
+* Update functions invoke error messages ([#75](https://github.com/sanity-io/functions-node/issues/75)) ([675cca0](https://github.com/sanity-io/functions-node/commit/675cca04be9873c4c0bcfda70c0879d027f21038))
+
 ## [1.7.3](https://github.com/sanity-io/functions-node/compare/v1.7.2...v1.7.3) (2026-09-14)
 
 
