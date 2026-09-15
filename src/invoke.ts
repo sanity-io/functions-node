@@ -11,6 +11,8 @@ const PARTITION_KEY = 'arc-app-res'
 /** @internal */
 export const MAX_RECURSION_COUNT = 16
 
+const INVOKE_DOCS_HINT = 'See docs for more information: https://www.sanity.io/docs/functions/function-to-function-invocation#ddd7727d1418'
+
 /**
  * @internal
  * lazy load aws-lite
@@ -138,10 +140,10 @@ export async function invoke<T = unknown>(name: string, payload: FunctionPayload
   const functionType = contextResource?.type
   if (sync === true) {
     if (functionType === undefined) {
-      throw new Error(`Function ${name} cannot be invoked synchronously.`)
+      throw new Error(`Function ${name} cannot be invoked synchronously. See docs for more information: ${INVOKE_DOCS_HINT}`)
     }
     if (functionType !== 'sanity.function.pubsub') {
-      throw new Error(`Function ${name} of type ${functionType} cannot be invoked synchronously.`)
+      throw new Error(`Function ${name} of type ${functionType} cannot be invoked synchronously. ${INVOKE_DOCS_HINT}`)
     }
   } else if (functionType !== 'sanity.function.pubsub' && functionType !== 'sanity.function.queue') {
     throw new Error(`No invokeable resource for function: ${name}`)
@@ -164,7 +166,7 @@ export async function invoke<T = unknown>(name: string, payload: FunctionPayload
   // Synchronous invocation
   if (sync === true) {
     if (!resource.function || !contextResource) {
-      throw new Error(`Function ${name} cannot be invoked synchronously.`)
+      throw new Error(`Function ${name} cannot be invoked synchronously. ${INVOKE_DOCS_HINT}`)
     }
     const {Payload, FunctionError} = await aws.Lambda.Invoke({
       FunctionName: resource.function.physicalResourceId,
