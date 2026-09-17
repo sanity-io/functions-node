@@ -6,7 +6,7 @@ import type {DurableHandler} from './types/durables.js'
  * @param maybeHandler
  * @returns resolved arguments
  */
-const resolveFuncArgs = <TConfig extends {name: string}>(
+const resolveFuncArgs = <TConfig extends {name: string; durableTimeout?: number}>(
   configOrHandler: TConfig | DurableHandler,
   maybeHandler?: DurableHandler,
 ): {config?: TConfig; handler?: DurableHandler; hadConfigArg: boolean} => {
@@ -36,6 +36,18 @@ const validateConfig = (config: unknown) => {
   const name = 'name' in config ? config.name : undefined
   const event = 'event' in config ? config.event : undefined
   if (typeof name !== 'string') errors.push('`config.name` must be a string')
+  if ('durableTimeout' in config && typeof config.durableTimeout !== 'number') {
+    errors.push('`config.durableTimeout` must be a number')
+  }
+
+  if ('durableTimeout' in config && typeof config.durableTimeout === 'number') {
+    if (config.durableTimeout < 60) {
+      errors.push('`config.durableTimeout` must be at least 60 seconds')
+    }
+    if (config.durableTimeout > 31_536_000) {
+      errors.push('`config.durableTimeout` must be at most 31_536_000 (1 year) seconds')
+    }
+  }
 
   if ('event' in config) {
     if (typeof event !== 'object' || event === null) {
@@ -68,7 +80,10 @@ export function createDurable(handler: DurableHandler): DurableHandler & {config
  * @param handler
  * @returns  The handler function, unmodified and the provided config object.
  */
-export function createDurable<TConfig extends {name: string}>(config: TConfig, handler: DurableHandler): DurableHandler & {config: TConfig}
+export function createDurable<TConfig extends {name: string; durableTimeout?: number}>(
+  config: TConfig,
+  handler: DurableHandler,
+): DurableHandler & {config: TConfig}
 
 /**
  * Durables creation function that can be called with or without a config object.
@@ -79,7 +94,7 @@ export function createDurable<TConfig extends {name: string}>(config: TConfig, h
  * @param maybeHandler
  * @returns The handler function, unmodified and the config object if provided
  */
-export function createDurable<TConfig extends {name: string}>(
+export function createDurable<TConfig extends {name: string; durableTimeout?: number}>(
   configOrHandler: TConfig | DurableHandler,
   maybeHandler?: DurableHandler,
 ): DurableHandler {
