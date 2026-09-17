@@ -199,7 +199,7 @@ export type DurableOperations = {
    * }
    *
    * // my-durable-function/index.ts
-   * createDurable(({step, context}) => {
+   * durableEventHandler(({step, context}) => {
    *   // With a function name
    *   step.delegate({name: 'my-function', handler: 'my-delegated-function', event: {data: {hello: 'world'}}})
    *   // With a resource object
