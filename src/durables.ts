@@ -36,6 +36,16 @@ const validateConfig = (config: unknown) => {
   const name = 'name' in config ? config.name : undefined
   const event = 'event' in config ? config.event : undefined
   if (typeof name !== 'string') errors.push('`config.name` must be a string')
+  if ('durableTimeout' in config && typeof config.durableTimeout !== 'number') {
+    errors.push('`config.durableTimeout` must be a number')
+  }
+
+  if ('durableTimeout' in config && typeof config.durableTimeout === 'number') {
+    if (config.durableTimeout < 60) {
+      errors.push('`config.durableTimeout` must be at least 60 seconds')
+    }
+    if (config.durableTimeout > 3600) {
+  }
 
   if ('event' in config) {
     if (typeof event !== 'object' || event === null) {
