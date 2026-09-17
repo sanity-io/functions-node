@@ -60,4 +60,16 @@ describe('createDurable', () => {
       createDurable({name: 'test'}, 'not-a-function')
     }).toThrow('`handler` must be a function')
   })
+
+  test('throws if `durableTimeout` is less than 60 seconds', () => {
+    expect(() => {
+      createDurable({name: 'test', durableTimeout: 59}, () => {})
+    }).toThrow('`config.durableTimeout` must be at least 60 seconds')
+  })
+
+  test('throws if `durableTimeout` is more than 31_536_000 seconds (1 year)', () => {
+    expect(() => {
+      createDurable({name: 'test', durableTimeout: 31_536_001}, () => {})
+    }).toThrow('`config.durableTimeout` must be at most 31_536_000 (1 year) seconds')
+  })
 })
