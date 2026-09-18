@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.8.0](https://github.com/sanity-io/functions-node/compare/v1.7.3...v1.8.0) (2026-09-18)
+
+
+### Features
+
+* **durables:** rename "createDurable" to  "durableEventHandler" ([#79](https://github.com/sanity-io/functions-node/issues/79)) ([6a6dd6c](https://github.com/sanity-io/functions-node/commit/6a6dd6cff1f0a159a89c78175390d18e165bd7fb))
+
+
+### Bug Fixes
+
+* **durables:** add the durableTimeout and validation ([#78](https://github.com/sanity-io/functions-node/issues/78)) ([8c5b858](https://github.com/sanity-io/functions-node/commit/8c5b858a08eb9e47e4cd26cb03196e9f71bdd6fd))
+* Update functions invoke error messages ([#75](https://github.com/sanity-io/functions-node/issues/75)) ([675cca0](https://github.com/sanity-io/functions-node/commit/675cca04be9873c4c0bcfda70c0879d027f21038))
+
 ## [1.7.3](https://github.com/sanity-io/functions-node/compare/v1.7.2...v1.7.3) (2026-09-14)
 
 
