@@ -147,8 +147,8 @@ describe('DurableRetry', () => {
 })
 
 describe('DurableOperations.wait', () => {
-  test('accepts a named AWS duration and resolves void', () => {
-    const result = step.wait({name: 'rate-limit', duration: {minutes: 1}})
+  test('accepts a string duration and resolves void', () => {
+    const result = step.wait({name: 'rate-limit', duration: '1 minute'})
 
     expectTypeOf(result).toEqualTypeOf<Promise<void>>()
   })
@@ -157,8 +157,8 @@ describe('DurableOperations.wait', () => {
     // @ts-expect-error numeric durations are unsupported
     step.wait({name: 'delay', duration: 30})
 
-    // @ts-expect-error empty duration is unsupported
-    step.wait({name: 'delay', duration: {}})
+    // @ts-expect-error durations are required
+    step.wait({name: 'delay'})
   })
 })
 
@@ -202,7 +202,7 @@ describe('DurableOperations.waitForCondition', () => {
 
         return {
           shouldRetry: true,
-          delay: {seconds: attempt},
+          delay: `${attempt} seconds`,
         }
       },
     })
@@ -216,7 +216,7 @@ describe('DurableOperations.waitForCondition', () => {
 
     assertType<DurableWaitForConditionDecision>({
       shouldRetry: true,
-      delay: {seconds: 5},
+      delay: '5 seconds',
     })
   })
 
