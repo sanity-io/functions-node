@@ -78,5 +78,8 @@
   },
   "allowScripts": {
     "fsevents@2.3.3": true
+  },
+  "dependencies": {
+    "parse-duration": "^2.1.9"
   }
 }
