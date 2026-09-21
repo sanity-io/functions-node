@@ -88,7 +88,18 @@ export interface DurableRetryStrategy {
 /**
  * @beta Using durables is considered experimental and may change in the future.
  */
-export type DurableWaitForConditionDecision = {shouldRetry: true; delay: DurableDuration} | {shouldRetry: false}
+export type DurableWaitForConditionDecision =
+  | {
+      shouldRetry: true
+      /**
+       * Duration as a string of `<number> <unit>` pairs.
+       * @example '10 seconds'
+       * @example '1 days 2 hours'
+       * @example '1 days 2 hours 30 minutes 15 seconds'
+       */
+      delay: string
+    }
+  | {shouldRetry: false}
 
 /**
  * @beta Using durables is considered experimental and may change in the future.
@@ -420,17 +431,18 @@ export type DurableOperations = {
    * @example
    * Wait for 30 seconds
    * ```ts
-   * await step.wait({name: 'wait30Sec', duration: { seconds: 30 }});
+   * await step.wait({name: 'wait30Sec', duration: '30 seconds'});
    * ```
    * Wait for 2 days and 3 hours
    * ```ts
-   * await step.wait({name: 'waitALongTime', duration: { days: 2, hours: 3 }});
+   * await step.wait({name: 'waitALongTime', duration: '2 days 3 hours'});
    * ```
    * @param name - Step name
    * @param duration - Amount of time the function will wait before continuing.
+   * Duration is a string of `<number> <unit>` pairs. Must be at least '1 second'
    * @returns Resolves after the duration
    */
-  wait({name, duration}: {name?: string; duration: DurableDuration}): Promise<void>
+  wait({name, duration}: {name?: string; duration: string}): Promise<void>
 
   /**
    * Waits for a specified condition to be met by executing a `poller` method to retrieve state and then inspecting the retrieved state in a `next` method to determine whether to retry and after what delay to do so.
@@ -455,9 +467,7 @@ export type DurableOperations = {
    *     if (state.article) return {shouldRetry: false}
    *       return {
    *         shouldRetry: true,
-   *         delay: {
-   *           seconds: Math.min(attempt * 2, 60),
-   *         },
+   *         delay: '10 seconds',
    *       }
    *     },
    *   },
