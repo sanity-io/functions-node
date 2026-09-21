@@ -1,5 +1,17 @@
 import {describe, expect, test} from 'vitest'
-import {type DurableHandler, durableEventHandler, UnrecoverableError} from '../src/index.js'
+import {type DurableHandler, durableEventHandler, normalizeDelay, parseDuration, UnrecoverableError} from '../src/index.js'
+
+describe('parseDuration', () => {
+  test('parses a 365-day year in seconds', () => {
+    expect(parseDuration('1 year')).toBe(31_536_000)
+  })
+})
+
+describe('normalizeDelay', () => {
+  test('converts a delay string to an AWS duration', () => {
+    expect(normalizeDelay('2 days 3 hours')).toStrictEqual({days: 2, hours: 3})
+  })
+})
 
 describe('UnrecoverableError', () => {
   test('is an Error', () => {
@@ -76,10 +88,15 @@ describe('durableEventHandler', () => {
       durableEventHandler({name: 'test', durableTimeout: 59}, () => {})
     }).toThrow('`config.durableTimeout` must be at least 60 seconds')
   })
+  test('accepts a string durableTimeout', () => {
+    expect(() => {
+      durableEventHandler({name: 'test', durableTimeout: '1 hour'}, () => {})
+    }).not.toThrow()
+  })
 
   test('throws if `durableTimeout` is more than 31_536_000 seconds (1 year)', () => {
     expect(() => {
       durableEventHandler({name: 'test', durableTimeout: 31_536_001}, () => {})
-    }).toThrow('`config.durableTimeout` must be at most 31_536_000 (1 year) seconds')
+    }).toThrow('`config.durableTimeout` must be at most 1 year')
   })
 })
