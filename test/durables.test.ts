@@ -1,5 +1,17 @@
 import {describe, expect, test} from 'vitest'
-import {createDurable, type DurableHandler, durableEventHandler} from '../src/index.js'
+import {createDurable, type DurableHandler, durableEventHandler, normalizeDelay, parseDuration} from '../src/index.js'
+
+describe('parseDuration', () => {
+  test('parses a 365-day year in seconds', () => {
+    expect(parseDuration('1 year')).toBe(31_536_000)
+  })
+})
+
+describe('normalizeDelay', () => {
+  test('converts a delay string to an AWS duration', () => {
+    expect(normalizeDelay('2 days 3 hours')).toStrictEqual({days: 2, hours: 3})
+  })
+})
 
 describe('createDurable', () => {
   test('returns handler with config attached', () => {
@@ -66,11 +78,16 @@ describe('createDurable', () => {
       createDurable({name: 'test', durableTimeout: 59}, () => {})
     }).toThrow('`config.durableTimeout` must be at least 60 seconds')
   })
+  test('accepts a string durableTimeout', () => {
+    expect(() => {
+      createDurable({name: 'test', durableTimeout: '1 hour'}, () => {})
+    }).not.toThrow()
+  })
 
   test('throws if `durableTimeout` is more than 31_536_000 seconds (1 year)', () => {
     expect(() => {
       createDurable({name: 'test', durableTimeout: 31_536_001}, () => {})
-    }).toThrow('`config.durableTimeout` must be at most 31_536_000 (1 year) seconds')
+    }).toThrow('`config.durableTimeout` must be at most 1 year')
   })
 })
 
@@ -139,10 +156,15 @@ describe('durableEventHandler', () => {
       durableEventHandler({name: 'test', durableTimeout: 59}, () => {})
     }).toThrow('`config.durableTimeout` must be at least 60 seconds')
   })
+  test('accepts a string durableTimeout', () => {
+    expect(() => {
+      durableEventHandler({name: 'test', durableTimeout: '1 hour'}, () => {})
+    }).not.toThrow()
+  })
 
   test('throws if `durableTimeout` is more than 31_536_000 seconds (1 year)', () => {
     expect(() => {
       durableEventHandler({name: 'test', durableTimeout: 31_536_001}, () => {})
-    }).toThrow('`config.durableTimeout` must be at most 31_536_000 (1 year) seconds')
+    }).toThrow('`config.durableTimeout` must be at most 1 year')
   })
 })

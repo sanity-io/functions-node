@@ -65,8 +65,20 @@ export type DurableJitterStrategy = 'none' | 'full' | 'half'
  */
 export interface DurableRetryStrategy {
   maxAttempts?: number
-  initialDelay?: DurableDuration
-  maxDelay?: DurableDuration
+  /**
+   * Duration as a string of `<number> <unit>` pairs.
+   * @example '10 seconds'
+   * @example '1 days 2 hours'
+   * @example '1 days 2 hours 30 minutes 15 seconds'
+   */
+  initialDelay?: string
+  /**
+   * Duration as a string of `<number> <unit>` pairs.
+   * @example '10 seconds'
+   * @example '1 days 2 hours'
+   * @example '1 days 2 hours 30 minutes 15 seconds'
+   */
+  maxDelay?: string
   backoffRate?: number
   jitter?: DurableJitterStrategy
   retryableErrors?: (string | RegExp)[]
@@ -111,7 +123,18 @@ export type DurableRetry = <T>(name: string | undefined, config: DurableRetryStr
  * @alpha Using durables is considered experimental and may change in the future.
  * @hidden
  */
-export type DurableWaitForConditionDecision = {shouldRetry: true; delay: DurableDuration} | {shouldRetry: false}
+export type DurableWaitForConditionDecision =
+  | {
+      shouldRetry: true
+      /**
+       * Duration as a string of `<number> <unit>` pairs.
+       * @example '10 seconds'
+       * @example '1 days 2 hours'
+       * @example '1 days 2 hours 30 minutes 15 seconds'
+       */
+      delay: string
+    }
+  | {shouldRetry: false}
 
 /**
  * @alpha Using durables is considered experimental and may change in the future.
@@ -238,18 +261,18 @@ export type DurableOperations = {
    * @example
    * Wait for 30 seconds
    * ```ts
-   * await step.wait({name: 'wait30Sec', duration: { seconds: 30 }});
+   * await step.wait({name: 'wait30Sec', duration: '30 seconds'});
    * ```
    * Wait for 2 days and 3 hours
    * ```ts
-   * await step.wait({name: 'waitALongTime', duration: { days: 2, hours: 3 }});
+   * await step.wait({name: 'waitALongTime', duration: '2 days 3 hours'});
    * ```
    * @param name - Step name
    * @param duration - Amount of time the function will wait before continuing.
-   * Duration is an object with properties of `seconds`, `minutes`, `hours`, or `days`. Must be at least {seconds: 1}
+   * Duration is a string of `<number> <unit>` pairs. Must be at least '1 second'
    * @returns Resolves after the duration
    */
-  wait({name, duration}: {name?: string; duration: DurableDuration}): Promise<void>
+  wait({name, duration}: {name?: string; duration: string}): Promise<void>
 
   /**
    * Waits for a specified condition to be met
@@ -277,9 +300,7 @@ export type DurableOperations = {
    *
    *       return {
    *         shouldRetry: true,
-   *         delay: {
-   *           seconds: Math.min(attempt * 2, 60),
-   *         },
+   *         delay: '10 seconds',
    *       }
    *     },
    *   },
