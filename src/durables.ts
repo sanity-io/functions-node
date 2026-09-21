@@ -1,3 +1,4 @@
+import {parseDuration} from './parse-duration.js'
 import type {DurableHandler} from './types/durables.js'
 
 /**
@@ -30,7 +31,7 @@ export class UnrecoverableError extends Error {
  * @param maybeHandler
  * @returns resolved arguments
  */
-const resolveFuncArgs = <TConfig extends {name: string; durableTimeout?: number}>(
+const resolveFuncArgs = <TConfig extends {name: string; durableTimeout?: string | number}>(
   configOrHandler: TConfig | DurableHandler,
   maybeHandler?: DurableHandler,
 ): {config?: TConfig; handler?: DurableHandler; hadConfigArg: boolean} => {
@@ -60,16 +61,17 @@ const validateConfig = (config: unknown) => {
   const name = 'name' in config ? config.name : undefined
   const event = 'event' in config ? config.event : undefined
   if (typeof name !== 'string') errors.push('`config.name` must be a string')
-  if ('durableTimeout' in config && typeof config.durableTimeout !== 'number') {
-    errors.push('`config.durableTimeout` must be a number')
-  }
 
-  if ('durableTimeout' in config && typeof config.durableTimeout === 'number') {
-    if (config.durableTimeout < 60) {
-      errors.push('`config.durableTimeout` must be at least 60 seconds')
-    }
-    if (config.durableTimeout > 31_536_000) {
-      errors.push('`config.durableTimeout` must be at most 31_536_000 (1 year) seconds')
+  if ('durableTimeout' in config) {
+    const duration = typeof config.durableTimeout === 'string' ? parseDuration(config.durableTimeout, 's') : config.durableTimeout
+    if (typeof duration === 'number') {
+      if (duration < 60) {
+        errors.push('`config.durableTimeout` must be at least 60 seconds')
+      }
+
+      if (duration > 31_536_000) {
+        errors.push('`config.durableTimeout` must be at most 1 year')
+      }
     }
   }
 
@@ -102,7 +104,7 @@ export function durableEventHandler(handler: DurableHandler): DurableHandler & {
  * @param handler
  * @returns  The handler function, unmodified and the provided config object.
  */
-export function durableEventHandler<TConfig extends {name: string; durableTimeout?: number}>(
+export function durableEventHandler<TConfig extends {name: string; durableTimeout?: string | number}>(
   config: TConfig,
   handler: DurableHandler,
 ): DurableHandler & {config: TConfig}
@@ -115,7 +117,7 @@ export function durableEventHandler<TConfig extends {name: string; durableTimeou
  * @param maybeHandler
  * @returns The handler function, unmodified and the config object if provided
  */
-export function durableEventHandler<TConfig extends {name: string; durableTimeout?: number}>(
+export function durableEventHandler<TConfig extends {name: string; durableTimeout?: string | number}>(
   configOrHandler: TConfig | DurableHandler,
   maybeHandler?: DurableHandler,
 ): DurableHandler {
