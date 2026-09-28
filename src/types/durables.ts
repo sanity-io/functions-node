@@ -64,14 +64,6 @@ export interface DurableRetryStrategy {
 }
 
 /**
- * @alpha: Using durables is considered experimental and may change in the future.
- * @hidden
- */
-export interface DurableStepConfig {
-  retry?: DurableRetryStrategy
-}
-
-/**
  * @alpha Using durables is considered experimental and may change in the future.
  * @hidden
  */

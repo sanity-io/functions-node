@@ -5,12 +5,14 @@ import type {
   DurableHandler,
   DurableLogger,
   DurableOperations,
+  DurableRetryStrategy,
   DurableStepAttemptContext,
   DurableStepCallbackContext,
   DurableWaitForConditionDecision,
   FunctionContext,
   GenericEvent,
 } from '../src/index.js'
+import {NonRetryableError} from '../src/index.js'
 
 const context = {} as DurableContext
 const step = {} as DurableOperations
@@ -95,6 +97,24 @@ describe('DurableDuration', () => {
   })
 })
 
+describe('NonRetryableError', () => {
+  test('extends Error', () => {
+    expectTypeOf<NonRetryableError>().toExtend<Error>()
+  })
+})
+
+describe('DurableRetryStrategy', () => {
+  test('accepts attempts and delay', () => {
+    assertType<DurableRetryStrategy>({attempts: 3, delay: {seconds: 5}})
+  })
+
+  test('accepts partial config', () => {
+    assertType<DurableRetryStrategy>({attempts: 2})
+    assertType<DurableRetryStrategy>({delay: {minutes: 1}})
+    assertType<DurableRetryStrategy>({})
+  })
+})
+
 describe('DurableOperations.run', () => {
   test('provides DurableContext and infers the result', () => {
     const result = step.run({
@@ -119,6 +139,14 @@ describe('DurableOperations.run', () => {
 
     expectTypeOf(result).toEqualTypeOf<Promise<number>>()
   })
+
+  test('accepts retry config', () => {
+    step.run({
+      name: 'with-retry',
+      handler: () => 'ok',
+      retry: {attempts: 2, delay: {seconds: 5}},
+    })
+  })
 })
 
 describe('DurableOperations.wait', () => {
@@ -134,6 +162,16 @@ describe('DurableOperations.wait', () => {
 
     // @ts-expect-error empty duration is unsupported
     step.wait({name: 'delay', duration: {}})
+  })
+})
+
+describe('DurableOperations.delegate', () => {
+  test('accepts retry config', () => {
+    step.delegate({
+      name: 'delegate-with-retry',
+      handler: 'my-function',
+      retry: {attempts: 3, delay: {seconds: 10}},
+    })
   })
 })
 
@@ -182,6 +220,16 @@ describe('DurableOperations.waitForCondition', () => {
       },
     })
     expectTypeOf(result).toEqualTypeOf<Promise<ArticleState>>()
+  })
+
+  test('accepts retry config', () => {
+    step.waitForCondition<ArticleState>({
+      name: 'with-retry',
+      initial: {article: null},
+      poller: async (state) => state,
+      next: () => ({shouldRetry: false}),
+      retry: {attempts: 5, delay: {seconds: 2}},
+    })
   })
 
   test('accepts both decision branches', () => {
