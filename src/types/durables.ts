@@ -145,7 +145,7 @@ export type DurableOperations = {
    * @param retry - retry configuration
    * @returns The value returned by the executed function
    */
-  run<T>({name, handler, retry}: {name?: string; handler: DurableStepRunHandler<T>; retry?: DurableStepConfig}): Promise<T>
+  run<T>({name, handler, retry}: {name?: string; handler: DurableStepRunHandler<T>; retry?: DurableRetryStrategy}): Promise<T>
   /**
    * Calls another function and awaits its result.
    * similar to ctx.invoke()
@@ -183,7 +183,7 @@ export type DurableOperations = {
     name?: string
     handler: string | BlueprintResource<`sanity.function.${string}`>
     event?: unknown
-    retry?: DurableStepConfig
+    retry?: DurableRetryStrategy
   }): Promise<T>
 
   /**
@@ -268,7 +268,7 @@ export type DurableOperations = {
     initial: T
     poller: DurableWaitForConditionPoller<T>
     next: DurableWaitForConditionNext<T>
-    retry?: DurableStepConfig
+    retry?: DurableRetryStrategy
   }): Promise<T>
 }
 

@@ -1,4 +1,4 @@
-import type {DurableContext, DurableHandler} from './types/durables.js'
+import type {DurableHandler} from './types/durables.js'
 
 /**
  * Error type indicating a non-retryable error in a durable function.
@@ -7,10 +7,6 @@ import type {DurableContext, DurableHandler} from './types/durables.js'
  */
 export class NonRetryableError extends Error {
   override name = 'NonRetryableError'
-
-  constructor(message?: string, options?: ErrorOptions) {
-    super(message, options)
-  }
 }
 
 /**

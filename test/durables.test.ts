@@ -1,5 +1,15 @@
 import {describe, expect, test} from 'vitest'
-import {createDurable, type DurableHandler, durableEventHandler} from '../src/index.js'
+import {createDurable, type DurableHandler, durableEventHandler, NonRetryableError} from '../src/index.js'
+
+describe('NonRetryableError', () => {
+  test('is an Error', () => {
+    const error = new NonRetryableError('cannot retry')
+
+    expect(error).toBeInstanceOf(Error)
+    expect(error.name).toBe('NonRetryableError')
+    expect(error.message).toBe('cannot retry')
+  })
+})
 
 describe('createDurable', () => {
   test('returns handler with config attached', () => {
