@@ -1,4 +1,17 @@
-import type {DurableHandler} from './types/durables.js'
+import type {DurableContext, DurableHandler} from './types/durables.js'
+
+/**
+ * Error type indicating a non-retryable error in a durable function.
+ * @alpha Durable functions are an experimental feature and may change in the future.
+ * @hidden
+ */
+export class NonRetryableError extends Error {
+  override name = 'NonRetryableError'
+
+  constructor(message?: string, options?: ErrorOptions) {
+    super(message, options)
+  }
+}
 
 /**
  * Determine if `durableEventHandler({}, () => {})` or `durableEventHandler(() => {})`.
