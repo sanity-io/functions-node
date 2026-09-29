@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.8.1](https://github.com/sanity-io/functions-node/compare/v1.8.0...v1.8.1) (2026-09-29)
+
+
+### Bug Fixes
+
+* **durables:** remove durable retry method - add retry config to steps ([#81](https://github.com/sanity-io/functions-node/issues/81)) ([1addf8d](https://github.com/sanity-io/functions-node/commit/1addf8d45a69fb9819ba6606ccfcd8db94e98bdb))
+
 ## [1.8.0](https://github.com/sanity-io/functions-node/compare/v1.7.3...v1.8.0) (2026-09-18)
 
 
