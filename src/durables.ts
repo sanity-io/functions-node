@@ -1,6 +1,28 @@
 import type {DurableHandler} from './types/durables.js'
 
 /**
+ * Error type indicating an unrecoverable error in a durable function.
+ * Used to override the retry behavior in a durable step operation.
+ * @alpha Durable functions are an experimental feature and may change in the future.
+ * @hidden
+ * @example
+ * ```ts
+ * const handler = durableEventHandler(async ({step}) => {
+ *   async step.run(async ({attempt}) => {
+ *     // step.run code
+ *   }, retry: {maxAttempts: 3})
+ * }).catch((err) => {
+ *   if (err instanceof UserNotFound) {
+ *     throw new UnrecoverableError(err)
+ *   }
+ * })
+ * ```
+ */
+export class UnrecoverableError extends Error {
+  override name = 'UnrecoverableError'
+}
+
+/**
  * Determine if `durableEventHandler({}, () => {})` or `durableEventHandler(() => {})`.
  * @param configOrHandler
  * @param maybeHandler

@@ -5,12 +5,13 @@ import type {
   DurableHandler,
   DurableLogger,
   DurableOperations,
-  DurableRetry,
+  DurableRetryStrategy,
   DurableStepAttemptContext,
   DurableStepCallbackContext,
   DurableWaitForConditionDecision,
   FunctionContext,
   GenericEvent,
+  UnrecoverableError,
 } from '../src/index.js'
 
 const context = {} as DurableContext
@@ -27,12 +28,11 @@ type ArticleState = {
 
 describe('DurableContext', () => {
   test('exposes the DurableOperations', () => {
-    const handler: DurableHandler = async ({context, event, logger, step, retry}) => {
+    const handler: DurableHandler = async ({context, event, logger, step}) => {
       expectTypeOf(context).toEqualTypeOf<DurableContext>()
       expectTypeOf(event).toEqualTypeOf<GenericEvent | undefined>()
       expectTypeOf(logger).toEqualTypeOf<DurableLogger>()
       expectTypeOf(step).toEqualTypeOf<DurableOperations>()
-      expectTypeOf(retry).toEqualTypeOf<DurableRetry>()
     }
 
     assertType<DurableHandler>(handler)
@@ -97,6 +97,24 @@ describe('DurableDuration', () => {
   })
 })
 
+describe('UnrecoverableError', () => {
+  test('extends Error', () => {
+    expectTypeOf<UnrecoverableError>().toExtend<Error>()
+  })
+})
+
+describe('DurableRetryStrategy', () => {
+  test('accepts maxAttempts and delay', () => {
+    assertType<DurableRetryStrategy>({maxAttempts: 3, delay: {seconds: 5}})
+  })
+
+  test('accepts partial config', () => {
+    assertType<DurableRetryStrategy>({maxAttempts: 2})
+    assertType<DurableRetryStrategy>({delay: {minutes: 1}})
+    assertType<DurableRetryStrategy>({})
+  })
+})
+
 describe('DurableOperations.run', () => {
   test('provides DurableContext and infers the result', () => {
     const result = step.run({
@@ -121,28 +139,13 @@ describe('DurableOperations.run', () => {
 
     expectTypeOf(result).toEqualTypeOf<Promise<number>>()
   })
-})
 
-describe('DurableRetry', () => {
-  test('retry accepts named and anonymous handlers', () => {
-    const handler: DurableHandler = async ({retry}) => {
-      const named = retry('charge-payment', {maxAttempts: 3}, async ({step, attempt}) => {
-        expectTypeOf(attempt).toEqualTypeOf<number>()
-        return step.delegate<{paymentId: string}>({
-          handler: 'charge-card',
-        })
-      })
-
-      const anonymous = retry(undefined, {maxAttempts: 2}, async ({step}) => {
-        return step.waitForCallback<{approved: boolean}>({
-          handler: async () => {},
-        })
-      })
-
-      expectTypeOf(named).toEqualTypeOf<Promise<{paymentId: string}>>()
-      expectTypeOf(anonymous).toEqualTypeOf<Promise<{approved: boolean}>>()
-    }
-    assertType<DurableHandler>(handler)
+  test('accepts retry config', () => {
+    step.run({
+      name: 'with-retry',
+      handler: () => 'ok',
+      retry: {maxAttempts: 2, delay: {seconds: 5}},
+    })
   })
 })
 
@@ -159,6 +162,16 @@ describe('DurableOperations.wait', () => {
 
     // @ts-expect-error empty duration is unsupported
     step.wait({name: 'delay', duration: {}})
+  })
+})
+
+describe('DurableOperations.delegate', () => {
+  test('accepts retry config', () => {
+    step.delegate({
+      name: 'delegate-with-retry',
+      handler: 'my-function',
+      retry: {maxAttempts: 3, delay: {seconds: 10}},
+    })
   })
 })
 

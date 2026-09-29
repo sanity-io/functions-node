@@ -57,55 +57,11 @@ export type DurableDuration =
  * @alpha: Using durables is considered experimental and may change in the future.
  * @hidden
  */
-export type DurableJitterStrategy = 'none' | 'full' | 'half'
-
-/**
- * @alpha: Using durables is considered experimental and may change in the future.
- * @hidden
- */
 export interface DurableRetryStrategy {
   maxAttempts?: number
-  initialDelay?: DurableDuration
-  maxDelay?: DurableDuration
-  backoffRate?: number
-  jitter?: DurableJitterStrategy
-  retryableErrors?: (string | RegExp)[]
-  retryableErrorTypes?: (new () => Error)[]
+  // @todo: tie this to a string like "5s" or "1m" and normalize it to a duration object
+  delay?: DurableDuration
 }
-
-/**
- * @alpha: Using durables is considered experimental and may change in the future.
- * @hidden
- */
-export type DurableStepSemantics = 'at-most-once-per-retry' | 'at-least-once-per-retry'
-
-/**
- * @alpha: Using durables is considered experimental and may change in the future.
- * @hidden
- */
-export interface DurableStepConfig {
-  strategy?: DurableRetryStrategy
-  semantics?: DurableStepSemantics
-}
-
-/**
- * Allowed operations in a retry code block
- * @alpha: Using durables is considered experimental and may change in the future.
- * @hidden
- */
-export type DurableRetryOperations = Pick<DurableOperations, 'delegate' | 'waitForCallback' | 'waitForCondition'>
-
-/**
- * @alpha: Using durables is considered experimental and may change in the future.
- * @hidden
- */
-export type DurableRetryBlock<T> = (envelope: {step: DurableRetryOperations; attempt: number}) => Promise<T>
-
-/**
- * @alpha: Using durables is considered experimental and may change in the future.
- * @hidden
- */
-export type DurableRetry = <T>(name: string | undefined, config: DurableRetryStrategy, block: DurableRetryBlock<T>) => Promise<T>
 
 /**
  * @alpha Using durables is considered experimental and may change in the future.
@@ -173,7 +129,7 @@ export type DurableOperations = {
    * step.run({
    *   name: 'run-with-retry'
    *   handler: () => { // handler code }
-   *   retry: { strategy: { maxAttempts: 2 } }
+   *   retry: { maxAttempts: 2, delay: { seconds: 5 } }
    * })
    * ```
    * @param name - Step name
@@ -181,7 +137,7 @@ export type DurableOperations = {
    * @param retry - retry configuration
    * @returns The value returned by the executed function
    */
-  run<T>({name, handler, retry}: {name?: string; handler: DurableStepRunHandler<T>; retry?: DurableStepConfig}): Promise<T>
+  run<T>({name, handler, retry}: {name?: string; handler: DurableStepRunHandler<T>; retry?: DurableRetryStrategy}): Promise<T>
   /**
    * Calls another function and awaits its result.
    * similar to ctx.invoke()
@@ -219,6 +175,7 @@ export type DurableOperations = {
     name?: string
     handler: string | BlueprintResource<`sanity.function.${string}`>
     event?: unknown
+    retry?: DurableRetryStrategy
   }): Promise<T>
 
   /**
@@ -315,5 +272,4 @@ export type DurableHandler = (envelope: {
   event?: GenericEvent
   step: DurableOperations
   logger: DurableLogger
-  retry: DurableRetry
 }) => unknown | Promise<unknown>
