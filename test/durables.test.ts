@@ -1,12 +1,12 @@
 import {describe, expect, test} from 'vitest'
-import {createDurable, type DurableHandler, durableEventHandler, NonRetryableError} from '../src/index.js'
+import {createDurable, type DurableHandler, durableEventHandler, UnrecoverableError} from '../src/index.js'
 
-describe('NonRetryableError', () => {
+describe('UnrecoverableError', () => {
   test('is an Error', () => {
-    const error = new NonRetryableError('cannot retry')
+    const error = new UnrecoverableError('cannot retry')
 
     expect(error).toBeInstanceOf(Error)
-    expect(error.name).toBe('NonRetryableError')
+    expect(error.name).toBe('UnrecoverableError')
     expect(error.message).toBe('cannot retry')
   })
 })

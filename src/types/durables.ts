@@ -58,7 +58,7 @@ export type DurableDuration =
  * @hidden
  */
 export interface DurableRetryStrategy {
-  attempts?: number
+  maxAttempts?: number
   // @todo: tie this to a string like "5s" or "1m" and normalize it to a duration object
   delay?: DurableDuration
 }
@@ -260,7 +260,6 @@ export type DurableOperations = {
     initial: T
     poller: DurableWaitForConditionPoller<T>
     next: DurableWaitForConditionNext<T>
-    retry?: DurableRetryStrategy
   }): Promise<T>
 }
 

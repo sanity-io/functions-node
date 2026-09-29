@@ -11,8 +11,8 @@ import type {
   DurableWaitForConditionDecision,
   FunctionContext,
   GenericEvent,
+  UnrecoverableError,
 } from '../src/index.js'
-import {NonRetryableError} from '../src/index.js'
 
 const context = {} as DurableContext
 const step = {} as DurableOperations
@@ -97,19 +97,19 @@ describe('DurableDuration', () => {
   })
 })
 
-describe('NonRetryableError', () => {
+describe('UnrecoverableError', () => {
   test('extends Error', () => {
-    expectTypeOf<NonRetryableError>().toExtend<Error>()
+    expectTypeOf<UnrecoverableError>().toExtend<Error>()
   })
 })
 
 describe('DurableRetryStrategy', () => {
-  test('accepts attempts and delay', () => {
-    assertType<DurableRetryStrategy>({attempts: 3, delay: {seconds: 5}})
+  test('accepts maxAttempts and delay', () => {
+    assertType<DurableRetryStrategy>({maxAttempts: 3, delay: {seconds: 5}})
   })
 
   test('accepts partial config', () => {
-    assertType<DurableRetryStrategy>({attempts: 2})
+    assertType<DurableRetryStrategy>({maxAttempts: 2})
     assertType<DurableRetryStrategy>({delay: {minutes: 1}})
     assertType<DurableRetryStrategy>({})
   })
@@ -144,7 +144,7 @@ describe('DurableOperations.run', () => {
     step.run({
       name: 'with-retry',
       handler: () => 'ok',
-      retry: {attempts: 2, delay: {seconds: 5}},
+      retry: {maxAttempts: 2, delay: {seconds: 5}},
     })
   })
 })
@@ -170,7 +170,7 @@ describe('DurableOperations.delegate', () => {
     step.delegate({
       name: 'delegate-with-retry',
       handler: 'my-function',
-      retry: {attempts: 3, delay: {seconds: 10}},
+      retry: {maxAttempts: 3, delay: {seconds: 10}},
     })
   })
 })
@@ -220,16 +220,6 @@ describe('DurableOperations.waitForCondition', () => {
       },
     })
     expectTypeOf(result).toEqualTypeOf<Promise<ArticleState>>()
-  })
-
-  test('accepts retry config', () => {
-    step.waitForCondition<ArticleState>({
-      name: 'with-retry',
-      initial: {article: null},
-      poller: async (state) => state,
-      next: () => ({shouldRetry: false}),
-      retry: {attempts: 5, delay: {seconds: 2}},
-    })
   })
 
   test('accepts both decision branches', () => {
