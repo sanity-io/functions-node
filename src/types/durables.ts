@@ -129,7 +129,7 @@ export type DurableOperations = {
    * step.run({
    *   name: 'run-with-retry'
    *   handler: () => { // handler code }
-   *   retry: { attempts: 2, delay: { seconds: 5 } }
+   *   retry: { maxAttempts: 2, delay: { seconds: 5 } }
    * })
    * ```
    * @param name - Step name
