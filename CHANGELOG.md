@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.9.0](https://github.com/sanity-io/functions-node/compare/v1.8.1...v1.9.0) (2026-10-14)
+
+
+### Features
+
+* add support for durable `step.fanout` ([#84](https://github.com/sanity-io/functions-node/issues/84)) ([0df4cf5](https://github.com/sanity-io/functions-node/commit/0df4cf5b68624fb45c96831f0822867f459b8cde))
+
 ## [1.8.1](https://github.com/sanity-io/functions-node/compare/v1.8.0...v1.8.1) (2026-09-29)
 
 
