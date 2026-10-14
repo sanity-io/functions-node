@@ -2,6 +2,7 @@ import {assertType, describe, expectTypeOf, test} from 'vitest'
 import type {
   DurableContext,
   DurableDuration,
+  DurableFanoutBranchContext,
   DurableHandler,
   DurableLogger,
   DurableOperations,
@@ -112,6 +113,34 @@ describe('DurableRetryStrategy', () => {
     assertType<DurableRetryStrategy>({maxAttempts: 2})
     assertType<DurableRetryStrategy>({delay: {minutes: 1}})
     assertType<DurableRetryStrategy>({})
+  })
+})
+
+describe('DurableOperations.fanout', () => {
+  test('child durable context parameter passed to branch has full step ops and logger available', () => {
+    step.fanout({
+      branches: [
+        async (ctx) => {
+          expectTypeOf(ctx).toEqualTypeOf<DurableFanoutBranchContext>()
+          expectTypeOf(ctx.logger).toEqualTypeOf<DurableLogger>()
+          expectTypeOf(ctx.step).toEqualTypeOf<DurableOperations>()
+        },
+      ],
+    })
+  })
+
+  test('should allow for setting homogeneous return types for all fanout branches', async () => {
+    const res = await step.fanout<string>({
+      branches: [async () => 'astring', async () => 'bstring'],
+    })
+    expectTypeOf(res.getResults()).toEqualTypeOf<string[]>()
+  })
+
+  test('should allow for setting heterogeneous return types for fanout branches', async () => {
+    const res = await step.fanout({
+      branches: [async () => 'astring', async () => 1337],
+    })
+    expectTypeOf(res.getResults()).toEqualTypeOf<(string | number)[]>()
   })
 })
 
@@ -244,7 +273,7 @@ describe('DurableOperations.waitForCondition', () => {
         }
       },
       // @ts-expect-error - testing fail
-      next: (_state, {_attempt}) => {
+      next: (_state, {attempt: _attempt}) => {
         assertType<DurableWaitForConditionDecision>(
           // @ts-expect-error next must return a decision synchronously, not a promise
           Promise.resolve({shouldRetry: false}),

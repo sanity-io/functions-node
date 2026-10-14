@@ -31,6 +31,26 @@ export interface DurableStepCallbackContext {
 }
 
 /**
+ * Context parameter passed to a branch method of a `step.fanout` execution.
+ * @alpha Using durables is considered experimental and may change in the future.
+ * @hidden
+ */
+export interface DurableStepContext extends DurableStepCallbackContext {
+  step: DurableOperations
+}
+export interface DurableFanoutBranchContext extends DurableStepContext {}
+
+/**
+ * Context parameter passed to the top-level `durableEventHandler` method.
+ * @alpha Using durables is considered experimental and may change in the future.
+ * @hidden
+ */
+export interface DurableTopLevelContext extends DurableStepContext {
+  context: DurableContext
+  event?: GenericEvent
+}
+
+/**
  * Arguments passed to callbacks that execute a durable attempt.
  * step.run & step.waitForCondition
  * @alpha Using durables is considered experimental and may change in the future.
@@ -85,6 +105,12 @@ export type DurableStepRunHandler<T = unknown> = DurableStepHandler<[context: Du
  * @alpha Using durables is considered experimental and may change in the future.
  * @hidden
  */
+export type DurableStepFanoutHandler<T = unknown> = DurableStepHandler<[context: DurableFanoutBranchContext], T | Promise<T>>
+
+/**
+ * @alpha Using durables is considered experimental and may change in the future.
+ * @hidden
+ */
 export type DurableStepWaitForCallbackHandler = DurableStepHandler<[callbackId: string, context: DurableStepCallbackContext], Promise<void>>
 
 /**
@@ -101,6 +127,121 @@ export type DurableWaitForConditionNext<T = unknown> = DurableStepHandler<
   [state: T, context: Pick<DurableStepAttemptContext, 'attempt'>],
   DurableWaitForConditionDecision
 >
+
+/**
+ * @alpha Using durables is considered experimental and may change in the future.
+ * @hidden
+ */
+export type BatchItemSucceededStatus = 'SUCCEEDED'
+/**
+ * @alpha Using durables is considered experimental and may change in the future.
+ * @hidden
+ */
+export type BatchItemFailedStatus = 'FAILED'
+/**
+ * @alpha Using durables is considered experimental and may change in the future.
+ * @hidden
+ */
+export type BatchItemStartedStatus = 'STARTED'
+/**
+ * @alpha Using durables is considered experimental and may change in the future.
+ * @hidden
+ */
+export type BatchItemStatus = BatchItemSucceededStatus | BatchItemFailedStatus | BatchItemStartedStatus
+/**
+ * Reason why a batch operation (map, parallel, or concurrent execution)
+ * completed.
+ *
+ * - `ALL_COMPLETED`: every item finished.
+ * - `MIN_SUCCESSFUL_REACHED`: CompletionConfig.minSuccessful was reached.
+ * - `FAILURE_TOLERANCE_EXCEEDED`: a failure threshold was exceeded.
+ * - `CUSTOM_COMPLETION_SUCCEEDED`: a custom CompletionConfig.shouldComplete
+ *   predicate signalled completion with a `SUCCEEDED` outcome before all items
+ *   finished.
+ * - `CUSTOM_COMPLETION_FAILED`: a custom CompletionConfig.shouldComplete
+ *   predicate signalled completion with a `FAILED` outcome before all items
+ *   finished.
+ * @alpha Using durables is considered experimental and may change in the future.
+ * @hidden
+ * @remarks copied from AWS Durable Execution SDK
+ */
+export type CompletionReason =
+  | 'ALL_COMPLETED'
+  | 'MIN_SUCCESSFUL_REACHED'
+  | 'FAILURE_TOLERANCE_EXCEEDED'
+  | 'CUSTOM_COMPLETION_SUCCEEDED'
+  | 'CUSTOM_COMPLETION_FAILED'
+/**
+ * The result of a `step.fanout` branch.
+ * @alpha Using durables is considered experimental and may change in the future.
+ * @hidden
+ * @remarks copied from AWS Durable Execution SDK
+ */
+export interface BatchItem<TResult> {
+  /** The result value if the item succeeded */
+  result?: TResult
+  /** The error if the item failed */
+  error?: Error
+  /** Index of the item in the original array */
+  index: number
+  /** Status of the item execution */
+  status: BatchItemStatus
+}
+/**
+ * @alpha Using durables is considered experimental and may change in the future.
+ * @hidden
+ * @remarks copied from AWS Durable Execution SDK
+ */
+export interface BatchResult<TResult> {
+  /**
+   * All items in the batch with their results/errors.
+   */
+  all: Array<BatchItem<TResult>>
+  /** Returns only the items that succeeded */
+  succeeded(): Array<
+    BatchItem<TResult> & {
+      result: TResult
+    }
+  >
+  /** Returns only the items that failed */
+  failed(): Array<
+    BatchItem<TResult> & {
+      error: Error
+    }
+  >
+  /**
+   * Returns only the items that are still in progress (STARTED) — items that
+   * were in flight when the batch completed early (e.g. via CompletionConfig.minSuccessful
+   * or a custom CompletionConfig.shouldComplete).
+   */
+  started(): Array<
+    BatchItem<TResult> & {
+      status: BatchItemStartedStatus
+    }
+  >
+  /** Overall status of the batch (SUCCEEDED if no failures, FAILED otherwise) */
+  status: BatchItemSucceededStatus | BatchItemFailedStatus
+  /** Reason why the batch completed */
+  completionReason: CompletionReason
+  /** Whether any item in the batch failed */
+  hasFailure: boolean
+  /** Throws the first error if any item failed */
+  throwIfError(): void
+  /** Returns array of all successful results */
+  getResults(): Array<TResult>
+  /** Returns array of all errors */
+  getErrors(): Array<Error>
+  /** Number of successful items */
+  successCount: number
+  /** Number of failed items */
+  failureCount: number
+  /**
+   * Number of started but not completed items. Not guaranteed to be stable across suspend/resume
+   */
+  startedCount: number
+  /** Total number of items */
+  totalCount: number
+}
 
 /**
  * The interface defining the operations available to a durable function.
@@ -138,6 +279,57 @@ export type DurableOperations = {
    * @returns The value returned by the executed function
    */
   run<T>({name, handler, retry}: {name?: string; handler: DurableStepRunHandler<T>; retry?: DurableRetryStrategy}): Promise<T>
+
+  /**
+   * Runs a set of steps, or branches, in parallel. Each branch contains its own child durable context, with all usual `step` operations available.
+   * @remarks By using the generic, you can set a single, homogeneous return type for all branches.
+   * @example
+   * ```ts
+   * step.fanout<string>({
+   *   name: 'parallel-runs',
+   *   branches: [async ({step, logger}) => {
+   *    logger.log('Running first function in parallel')
+   *    return 'first'
+   *   }, async ({step, logger}) => {
+   *    logger.log('Running second function in parallel')
+   *    return 'second'
+   *   }],
+   * })
+   * ```
+   * @param name - Step name
+   * @param branches - functions being executed in parallel
+   * @returns A batch result of values returned or errors thrown by all branches.
+   */
+  fanout<T>({name, branches}: {name?: string; branches: DurableStepFanoutHandler<T>[]}): Promise<BatchResult<T>>
+  /**
+   * Runs a set of steps, or branches, in parallel. Each branch contains its own child durable context, with all usual `step` operations available.
+   * @remarks This overload provides automatic type inference for heterogeneous branch return types. When branches return different types, the result will be `BatchResult<T1 | T2 | ...>`.
+   * Use the explicit type parameter overloads above for strict homogeneous type checking.
+   * @example
+   * ```ts
+   * step.fanout<string>({
+   *   name: 'parallel-runs',
+   *   branches: [async ({step, logger}) => {
+   *    logger.log('Running first function in parallel')
+   *    return 'first'
+   *   }, async ({step, logger}) => {
+   *    logger.log('Running second function in parallel')
+   *    return 'second'
+   *   }],
+   * })
+   * ```
+   * @param name - Step name
+   * @param branches - functions being executed in parallel
+   * @returns A batch result of values returned or errors thrown by all branches.
+   */
+  fanout<Branches extends readonly unknown[]>({
+    name,
+    branches,
+  }: {
+    name?: string
+    branches: Branches
+  }): Promise<BatchResult<Branches[number] extends DurableStepFanoutHandler<infer ReturnType> ? ReturnType : never>>
+
   /**
    * Calls another function and awaits its result.
    * similar to ctx.invoke()
@@ -267,9 +459,4 @@ export type DurableOperations = {
  * @alpha Using durables is considered experimental and may change in the future.
  * @hidden
  */
-export type DurableHandler = (envelope: {
-  context: DurableContext
-  event?: GenericEvent
-  step: DurableOperations
-  logger: DurableLogger
-}) => unknown | Promise<unknown>
+export type DurableHandler = (envelope: DurableTopLevelContext) => unknown | Promise<unknown>
