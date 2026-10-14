@@ -35,16 +35,17 @@ export interface DurableStepCallbackContext {
  * @alpha Using durables is considered experimental and may change in the future.
  * @hidden
  */
-export interface DurableFanoutBranchContext extends DurableStepCallbackContext {
+export interface DurableStepContext extends DurableStepCallbackContext {
   step: DurableOperations
 }
+export interface DurableFanoutBranchContext extends DurableStepContext {}
 
 /**
  * Context parameter passed to the top-level `durableEventHandler` method.
  * @alpha Using durables is considered experimental and may change in the future.
  * @hidden
  */
-export interface DurableTopLevelContext extends DurableFanoutBranchContext {
+export interface DurableTopLevelContext extends DurableStepContext {
   context: DurableContext
   event?: GenericEvent
 }
