@@ -51,6 +51,15 @@ export interface DurableTopLevelContext extends DurableStepContext {
 }
 
 /**
+ * Context parameter passed to the `waitForCallback` submitter method.
+ * @alpha Using durables is considered experimental and may change in the future.
+ * @hidden
+ */
+export interface DurableCallbackSubmitterContext extends DurableStepCallbackContext {
+  callbackId: string
+}
+
+/**
  * Arguments passed to callbacks that execute a durable attempt.
  * step.run & step.waitForCondition
  * @alpha Using durables is considered experimental and may change in the future.
@@ -111,7 +120,7 @@ export type DurableStepFanoutHandler<T = unknown> = DurableStepHandler<[context:
  * @alpha Using durables is considered experimental and may change in the future.
  * @hidden
  */
-export type DurableStepWaitForCallbackHandler = DurableStepHandler<[callbackId: string, context: DurableStepCallbackContext], Promise<void>>
+export type DurableStepWaitForCallbackSubmitter = DurableStepHandler<[context: DurableCallbackSubmitterContext], Promise<void>>
 
 /**
  * @alpha Using durables is considered experimental and may change in the future.
@@ -371,14 +380,32 @@ export type DurableOperations = {
   }): Promise<T>
 
   /**
-   * Waits for an external callback
-   * similar to ctx.waitForCallback()
-   * @remarks cannot be nested inside another step
+   * Generates a unique callback ID, runs a handler to pass the ID to an external system and waits for some external system to POST JSON data to a Sanity Durable callback API.
+   * @example
+   * Wait for 30 seconds
+   * ```ts
+   * await step.waitForCallback({name: 'ask-for-permission', submitter: async ({callbackId}) => {
+   *   await sendForApproval(callbackId)
+   * }});
+   * ```
+   * ```
    * @param name - Step name
-   * @param handler - Receives the generated callbackId and returns a delivered promise
-   * @returns The value returned by the executed function
+   * @param submitter - Function that submits the provided callbackId parameter to an external system
+   * @param timeout - Maximum time to wait for the callback result
+   * @param retry - retry configuration for the submitter function
+   * @returns The value returned to the Sanity Durable callback HTTP API
    */
-  waitForCallback<T>({name, handler}: {name?: string; handler: DurableStepWaitForCallbackHandler}): Promise<T>
+  waitForCallback<T>({
+    name,
+    submitter,
+    timeout,
+    retry,
+  }: {
+    name?: string
+    submitter: DurableStepWaitForCallbackSubmitter
+    timeout?: DurableDuration
+    retry?: DurableRetryStrategy
+  }): Promise<T>
 
   /**
    * Waits for a specified duration
