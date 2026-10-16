@@ -8,7 +8,6 @@ import type {
   DurableOperations,
   DurableRetryStrategy,
   DurableStepAttemptContext,
-  DurableStepCallbackContext,
   DurableWaitForConditionDecision,
   FunctionContext,
   GenericEvent,
@@ -205,13 +204,13 @@ describe('DurableOperations.delegate', () => {
 })
 
 describe('DurableOperations.waitForCallback', () => {
-  test('provides callback ID and DurableStepCallbackContext', () => {
+  test('provides callback ID and logger', () => {
     const result = step.waitForCallback<{approved: boolean}>({
       name: 'approval',
-      handler: async (callbackId, ctx) => {
+      submitter: async ({callbackId, logger}) => {
         expectTypeOf(callbackId).toEqualTypeOf<string>()
-        expectTypeOf(ctx).toEqualTypeOf<DurableStepCallbackContext>()
-        ctx.logger.info('Submitting approval request', callbackId)
+        expectTypeOf(logger).toEqualTypeOf<DurableLogger>()
+        logger.info('Submitting approval request', callbackId)
       },
     })
 
