@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.10.0](https://github.com/sanity-io/functions-node/compare/v1.9.0...v1.10.0) (2026-10-16)
+
+
+### Features
+
+* support for `waitForCallback` operation ([#86](https://github.com/sanity-io/functions-node/issues/86)) ([9a1b985](https://github.com/sanity-io/functions-node/commit/9a1b98512a6c7a3d028299afc7de38ea510f4740))
+
 ## [1.9.0](https://github.com/sanity-io/functions-node/compare/v1.8.1...v1.9.0) (2026-10-14)
 
 
