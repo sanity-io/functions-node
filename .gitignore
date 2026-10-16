@@ -33,3 +33,4 @@ tsconfig.vitest-temp*
 
 # Scratch pad for temporary work
 /scratch
+mise.toml
