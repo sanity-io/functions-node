@@ -171,7 +171,7 @@ describe('invoke', () => {
     await expect(invoke(fnName, {event: {data: {}}, context}, {sync: true})).rejects.toThrow(
       `Function ${fnName} cannot be invoked synchronously.`,
     )
-    expect(awsLite.testing.getAllRequests('SNS.Publish')).toBeUndefined()
+    expect(awsLite.testing.getAllRequests('SNS.Publish')).toStrictEqual([])
   })
 
   test('invoke calls local function with the event data alone', async () => {
@@ -256,14 +256,14 @@ describe('invoke', () => {
   test('invoke throws when event payload exceeds 256KB', async () => {
     const event = {data: {blob: 'a'.repeat(256 * 1024)}}
     await expect(invoke(fnName, {event, context})).rejects.toThrow('Payload exceeds maximum size of 256KB')
-    expect(awsLite.testing.getAllRequests('DynamoDB.GetItem')).toBeUndefined()
+    expect(awsLite.testing.getAllRequests('DynamoDB.GetItem')).toStrictEqual([])
   })
 
   test('invoke throws when sync payload exceeds 6MB', async () => {
     const event = {data: {blob: 'a'.repeat(6 * 1024 * 1024)}}
 
     await expect(invoke(fnName, {event, context}, {sync: true})).rejects.toThrow('Payload exceeds maximum size of 6MB')
-    expect(awsLite.testing.getAllRequests('DynamoDB.GetItem')).toBeUndefined()
+    expect(awsLite.testing.getAllRequests('DynamoDB.GetItem')).toStrictEqual([])
   })
 })
 
@@ -616,8 +616,8 @@ describe('invoke lineage', () => {
     vi.stubEnv(LINEAGE_ENV, `abc:${MAX_RECURSION_COUNT}`)
 
     await expect(invoke(fnName, {event: {data: {}}, context})).rejects.toThrow(MAX_RECURSION_ERROR)
-    expect(awsLite.testing.getAllRequests('DynamoDB.GetItem')).toBeUndefined()
-    expect(awsLite.testing.getAllRequests('SNS.Publish')).toBeUndefined()
+    expect(awsLite.testing.getAllRequests('DynamoDB.GetItem')).toStrictEqual([])
+    expect(awsLite.testing.getAllRequests('SNS.Publish')).toStrictEqual([])
   })
 
   test('rejects before invoking a local function once the recursion limit is hit', async () => {
