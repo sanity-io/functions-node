@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.10.1](https://github.com/sanity-io/functions-node/compare/v1.10.0...v1.10.1) (2026-10-17)
+
+
+### Bug Fixes
+
+* update peer dependency ([#89](https://github.com/sanity-io/functions-node/issues/89)) ([6f9f33b](https://github.com/sanity-io/functions-node/commit/6f9f33be64b886b1b1750a92572f980e4cd19bc6))
+
 ## [1.10.0](https://github.com/sanity-io/functions-node/compare/v1.9.0...v1.10.0) (2026-10-16)
 
 
