@@ -11,6 +11,13 @@ const PARTITION_KEY = 'arc-app-res'
 /** @internal */
 export const MAX_RECURSION_COUNT = 16
 
+/**
+ * @internal
+ * Function types that can be invoked asynchronously.
+ * TODO: RUN-1849 a durable or queue function with a Content Lake `event` should not be invokeable
+ */
+const ASYNC_INVOKEABLE_TYPES = ['sanity.function.pubsub', 'sanity.function.queue', 'sanity.function.durable']
+
 const INVOKE_DOCS_HINT = 'See docs for more information: https://www.sanity.io/docs/functions/function-to-function-invocation#ddd7727d1418'
 
 /**
@@ -112,8 +119,9 @@ export function buildLineageToken(name: string, lineage: string | undefined) {
  * Invokes another Sanity Function.
  *
  * By default the invocation is async: the payload is handed off to the function's
- * event source and nothing is returned. Pass `{sync: true}` to invoke the function and
- * wait for its return value.
+ * event source (or, for durable functions, a new durable execution is started) and
+ * nothing is returned. Pass `{sync: true}` to invoke the function and wait for its
+ * return value; only pubsub functions support this.
  *
  * @param name - Name of the function to invoke
  * @param payload - The `{event, context}` envelope to deliver
@@ -137,16 +145,17 @@ export async function invoke<T = unknown>(name: string, payload: FunctionPayload
 
   // Make sure we can invoke this function type
   const contextResource = payload?.context?.resources?.(name)
-  const functionType = contextResource?.type
+  if (contextResource?.type === undefined) {
+    throw new Error(`Cannot find or determine function ${name} type!`)
+  }
   if (sync === true) {
-    if (functionType === undefined) {
-      throw new Error(`Function ${name} cannot be invoked synchronously. See docs for more information: ${INVOKE_DOCS_HINT}`)
+    if (contextResource.type !== 'sanity.function.pubsub') {
+      throw new Error(`Function ${name} of type ${contextResource.type} cannot be invoked synchronously. ${INVOKE_DOCS_HINT}`)
     }
-    if (functionType !== 'sanity.function.pubsub') {
-      throw new Error(`Function ${name} of type ${functionType} cannot be invoked synchronously. ${INVOKE_DOCS_HINT}`)
-    }
-  } else if (functionType !== 'sanity.function.pubsub' && functionType !== 'sanity.function.queue') {
-    throw new Error(`No invokeable resource for function: ${name}`)
+  } else if (!ASYNC_INVOKEABLE_TYPES.includes(contextResource.type)) {
+    throw new Error(
+      `Function ${name} of type ${contextResource.type} cannot be invoked asynchronously; only the following function types can be invoked asynchronously: ${ASYNC_INVOKEABLE_TYPES.join(', ')}`,
+    )
   }
 
   // Local invoke path for Sanity CLI
@@ -182,12 +191,12 @@ export async function invoke<T = unknown>(name: string, payload: FunctionPayload
   }
 
   // Async invocation by type
-  if (resource.topic && functionType === 'sanity.function.pubsub') {
+  if (resource.topic && contextResource.type === 'sanity.function.pubsub') {
     await aws.SNS.Publish({
       TopicArn: resource.topic.physicalResourceId,
       Message: stringPayload,
     })
-  } else if (resource.queue && functionType === 'sanity.function.queue') {
+  } else if (resource.queue && contextResource.type === 'sanity.function.queue') {
     const queueUrl = resource.queue.physicalResourceId
     const message: {MessageBody: string; MessageGroupId?: string; QueueUrl: string} = {
       MessageBody: stringPayload,
@@ -196,6 +205,14 @@ export async function invoke<T = unknown>(name: string, payload: FunctionPayload
     // A FIFO queue rejects a message without a `MessageGroupId`
     if (queueUrl.endsWith('.fifo')) message.MessageGroupId = name
     await aws.SQS.SendMessage(message)
+  } else if (resource.function && contextResource.type === 'sanity.function.durable') {
+    await aws.Lambda.Invoke({
+      // Durable functions require a version qualifier
+      // TODO: RUN-1500 durable versioning support
+      FunctionName: `${resource.function.physicalResourceId}:$LATEST`,
+      Payload: outgoingPayload,
+      InvocationType: 'Event',
+    })
   } else {
     throw new Error(`No invokeable resource for function: ${name}`)
   }
