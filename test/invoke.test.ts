@@ -8,10 +8,11 @@ const fnName: string = 'my-fn'
 const MAX_RECURSION_ERROR = `Function ${fnName} exceeded the maximum recursion depth of ${MAX_RECURSION_COUNT}`
 const SANITY_FUNCTION_PUBSUB = 'sanity.function.pubsub'
 const SANITY_FUNCTION_QUEUE = 'sanity.function.queue'
+const SANITY_FUNCTION_DURABLE = 'sanity.function.durable'
 /** Function types that have no invoke path at all: neither sync nor async can reach them. */
 const NON_INVOKEABLE_TYPES = ['sanity.function.cron', 'sanity.function.document', 'sanity.function.sync-tag-invalidate']
-/** Every function type that is not an event function, i.e. the ones sync invokes must reject. */
-const NON_EVENT_TYPES = [SANITY_FUNCTION_QUEUE, ...NON_INVOKEABLE_TYPES]
+/** Every function type that is not a pubsub function, i.e. the ones sync invokes must reject. */
+const NON_EVENT_TYPES = [SANITY_FUNCTION_QUEUE, SANITY_FUNCTION_DURABLE, ...NON_INVOKEABLE_TYPES]
 
 /** Builds a callable `ResourcesApi` backed by a fixed list of resources, like a deployed blueprint would. */
 function makeResources(...list: BlueprintResource[]): ResourcesApi {
@@ -300,7 +301,7 @@ describe('invoke sync is limited to event functions', () => {
     const unrelated = {...defaultContext, resources: makeResources({id: 'fn-2', name: 'other-fn', type: SANITY_FUNCTION_PUBSUB})}
 
     await expect(invoke(fnName, {event: {data: {}}, context: unrelated}, {sync: true})).rejects.toThrow(
-      `Function ${fnName} cannot be invoked synchronously.`,
+      `Cannot find or determine function ${fnName} type!`,
     )
     expect(awsLite.testing.getAllRequests('Lambda.Invoke')).toHaveLength(0)
   })
@@ -311,7 +312,7 @@ describe('invoke sync is limited to event functions', () => {
     const legacy = {...defaultContext, resources: undefined as unknown as ResourcesApi}
 
     await expect(invoke(fnName, {event: {data: {}}, context: legacy}, {sync: true})).rejects.toThrow(
-      `Function ${fnName} cannot be invoked synchronously.`,
+      `Cannot find or determine function ${fnName} type!`,
     )
     expect(awsLite.testing.getAllRequests('Lambda.Invoke')).toHaveLength(0)
   })
@@ -340,7 +341,7 @@ describe('invoke sync is limited to event functions', () => {
   })
 })
 
-describe('invoke async is limited to event and queue functions', () => {
+describe('invoke async is limited to event, queue and durable functions', () => {
   /** Point the disco table at an SNS topic, the event function's event source. */
   function mockTopicTarget() {
     awsLite.testing.mock('DynamoDB.GetItem', {
@@ -357,6 +358,14 @@ describe('invoke async is limited to event and queue functions', () => {
     awsLite.testing.mock('SQS.SendMessage', {MessageId: 'm-1'})
   }
 
+  /** Point the disco table at a Lambda, which a durable function is started on directly. */
+  function mockLambdaTarget() {
+    awsLite.testing.mock('DynamoDB.GetItem', {
+      Item: {resources: {function: {logicalResourceId: 'foo', physicalResourceId: 'my-durable-fn'}}},
+    })
+    awsLite.testing.mock('Lambda.Invoke', {StatusCode: 202})
+  }
+
   test(`sends a ${SANITY_FUNCTION_PUBSUB} function to SNS`, async () => {
     mockTopicTarget()
 
@@ -371,6 +380,19 @@ describe('invoke async is limited to event and queue functions', () => {
     await invoke(fnName, {event: {data: {}}, context: contextForType(SANITY_FUNCTION_QUEUE)})
 
     expect(awsLite.testing.getLastRequest('SQS.SendMessage').request.QueueUrl).toBe('https://my-queue')
+  })
+
+  test(`starts a ${SANITY_FUNCTION_DURABLE} function with an async Lambda invoke of its latest version`, async () => {
+    mockLambdaTarget()
+
+    const payload = {event: {data: {hello: 'world'}}, context: contextForType(SANITY_FUNCTION_DURABLE)}
+    await invoke(fnName, payload)
+
+    const {request} = awsLite.testing.getLastRequest('Lambda.Invoke')
+    // Durable Lambdas reject an unqualified invoke
+    expect(request.FunctionName).toBe('my-durable-fn:$LATEST')
+    expect(request.InvocationType).toBe('Event')
+    expect(request.Payload).toEqual(outgoing(payload))
   })
 
   test(`rejects a ${SANITY_FUNCTION_PUBSUB} function whose only resource is a queue`, async () => {
@@ -396,7 +418,7 @@ describe('invoke async is limited to event and queue functions', () => {
     mockTopicTarget()
 
     await expect(invoke(fnName, {event: {data: {}}, context: contextForType(type)})).rejects.toThrow(
-      `No invokeable resource for function: ${fnName}`,
+      `Function ${fnName} of type ${type} cannot be invoked async`,
     )
     expect(awsLite.testing.getAllRequests('SNS.Publish')).toHaveLength(0)
   })
@@ -405,7 +427,7 @@ describe('invoke async is limited to event and queue functions', () => {
     mockQueueTarget()
 
     await expect(invoke(fnName, {event: {data: {}}, context: contextForType(type)})).rejects.toThrow(
-      `No invokeable resource for function: ${fnName}`,
+      `Function ${fnName} of type ${type} cannot be invoked async`,
     )
     expect(awsLite.testing.getAllRequests('SQS.SendMessage')).toHaveLength(0)
   })
@@ -415,7 +437,9 @@ describe('invoke async is limited to event and queue functions', () => {
     const unrelated = {...defaultContext, resources: makeResources({id: 'fn-2', name: 'other-fn', type: SANITY_FUNCTION_PUBSUB})}
 
     // An unknown function has no type to check, so it lands on the same error as a cron or document function
-    await expect(invoke(fnName, {event: {data: {}}, context: unrelated})).rejects.toThrow(`No invokeable resource for function: ${fnName}`)
+    await expect(invoke(fnName, {event: {data: {}}, context: unrelated})).rejects.toThrow(
+      `Cannot find or determine function ${fnName} type`,
+    )
     expect(awsLite.testing.getAllRequests('SNS.Publish')).toHaveLength(0)
   })
 
@@ -423,7 +447,7 @@ describe('invoke async is limited to event and queue functions', () => {
     mockTopicTarget()
     const legacy = {...defaultContext, resources: undefined as unknown as ResourcesApi}
 
-    await expect(invoke(fnName, {event: {data: {}}, context: legacy})).rejects.toThrow(`No invokeable resource for function: ${fnName}`)
+    await expect(invoke(fnName, {event: {data: {}}, context: legacy})).rejects.toThrow(`Cannot find or determine function ${fnName} type`)
     expect(awsLite.testing.getAllRequests('SNS.Publish')).toHaveLength(0)
   })
 
@@ -432,7 +456,9 @@ describe('invoke async is limited to event and queue functions', () => {
     const localInvoke = vi.fn()
     const context = {...contextForType(type), local: true, invoke: localInvoke}
 
-    await expect(invoke(fnName, {event: {data: {}}, context})).rejects.toThrow(`No invokeable resource for function: ${fnName}`)
+    await expect(invoke(fnName, {event: {data: {}}, context})).rejects.toThrow(
+      `Function my-fn of type ${type} cannot be invoked asynchronously; only the following function types can be invoked asynchronously: sanity.function.pubsub, sanity.function.queue, sanity.function.durable`,
+    )
     expect(localInvoke).not.toHaveBeenCalled()
   })
 })
@@ -587,6 +613,18 @@ describe('invoke lineage', () => {
 
     const {request} = awsLite.testing.getLastRequest('SQS.SendMessage')
     expect(JSON.parse(request.MessageBody).context.lineage).toBe(NEXT_LINEAGE)
+  })
+
+  test('forwards the lineage token to a durable function', async () => {
+    awsLite.testing.mock('DynamoDB.GetItem', {
+      Item: {resources: {function: {logicalResourceId: 'foo', physicalResourceId: 'my-durable-fn'}}},
+    })
+    awsLite.testing.mock('Lambda.Invoke', {StatusCode: 202})
+
+    await invoke(fnName, {event: {data: {}}, context: contextForType(SANITY_FUNCTION_DURABLE)})
+
+    const {request} = awsLite.testing.getLastRequest('Lambda.Invoke')
+    expect(request.Payload.context.lineage).toBe(NEXT_LINEAGE)
   })
 
   test('forwards the lineage token to a synchronous Lambda invoke', async () => {
