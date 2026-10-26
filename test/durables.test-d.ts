@@ -128,18 +128,42 @@ describe('DurableOperations.fanout', () => {
     })
   })
 
-  test('should allow for setting homogeneous return types for all fanout branches', async () => {
-    const res = await step.fanout<string>({
-      branches: [async () => 'astring', async () => 'bstring'],
+  describe('unnamed branches', () => {
+    test('should allow for setting homogeneous return types for all fanout branches', async () => {
+      const res = await step.fanout<string>({
+        branches: [async () => 'astring', async () => 'bstring'],
+      })
+      expectTypeOf(res.getResults()).toEqualTypeOf<string[]>()
     })
-    expectTypeOf(res.getResults()).toEqualTypeOf<string[]>()
+
+    test('should allow for inferring heterogeneous return types for fanout branches', async () => {
+      const res = await step.fanout({
+        branches: [async () => 'astring', async () => 1337],
+      })
+      expectTypeOf(res.getResults()).toEqualTypeOf<(string | number)[]>()
+    })
   })
 
-  test('should allow for setting heterogeneous return types for fanout branches', async () => {
-    const res = await step.fanout({
-      branches: [async () => 'astring', async () => 1337],
+  describe('named branches', () => {
+    test('should allow for setting homogeneous return types for all fanout branches', async () => {
+      const res = await step.fanout<string>({
+        branches: [
+          {name: 'string-branch', func: async () => 'astring'},
+          {name: 'another-string-branch', func: async () => 'bstring'},
+        ],
+      })
+      expectTypeOf(res.getResults()).toEqualTypeOf<string[]>()
     })
-    expectTypeOf(res.getResults()).toEqualTypeOf<(string | number)[]>()
+
+    test('should allow for inferring heterogeneous return types for fanout branches', async () => {
+      const res = await step.fanout({
+        branches: [
+          {name: 'string-branch', func: async () => 'astring'},
+          {name: 'number-branch', func: async () => 1337},
+        ],
+      })
+      expectTypeOf(res.getResults()).toEqualTypeOf<(string | number)[]>()
+    })
   })
 })
 

@@ -120,6 +120,15 @@ export type DurableStepFanoutHandler<T = unknown> = DurableStepHandler<[context:
  * @alpha Using durables is considered experimental and may change in the future.
  * @hidden
  */
+export type DurableStepFanoutNamedHandler<T = unknown> = {
+  func: DurableStepHandler<[context: DurableFanoutBranchContext], T | Promise<T>>
+  name?: string
+}
+
+/**
+ * @alpha Using durables is considered experimental and may change in the future.
+ * @hidden
+ */
 export type DurableStepWaitForCallbackSubmitter = DurableStepHandler<[context: DurableCallbackSubmitterContext], Promise<void>>
 
 /**
@@ -290,7 +299,7 @@ export type DurableOperations = {
   run<T>({name, handler, retry}: {name?: string; handler: DurableStepRunHandler<T>; retry?: DurableRetryStrategy}): Promise<T>
 
   /**
-   * Runs a set of steps, or branches, in parallel. Each branch contains its own child durable context, with all usual `step` operations available.
+   * Runs a set of steps, or branches, in parallel. Each branch contains its own child durable context, with all usual `step` operations available. Branches may be named.
    * @remarks By using the generic, you can set a single, homogeneous return type for all branches.
    * @example
    * ```ts
@@ -299,9 +308,12 @@ export type DurableOperations = {
    *   branches: [async ({step, logger}) => {
    *    logger.log('Running first function in parallel')
    *    return 'first'
-   *   }, async ({step, logger}) => {
-   *    logger.log('Running second function in parallel')
-   *    return 'second'
+   *   }, {
+   *     func: async ({step, logger}) => {
+   *      logger.log('Running second function in parallel')
+   *      return 'second'
+   *     },
+   *     name: 'second-branch',
    *   }],
    * })
    * ```
@@ -309,7 +321,13 @@ export type DurableOperations = {
    * @param branches - functions being executed in parallel
    * @returns A batch result of values returned or errors thrown by all branches.
    */
-  fanout<T>({name, branches}: {name?: string; branches: DurableStepFanoutHandler<T>[]}): Promise<BatchResult<T>>
+  fanout<T>({
+    name,
+    branches,
+  }: {
+    name?: string
+    branches: (DurableStepFanoutHandler<T> | DurableStepFanoutNamedHandler<T>)[]
+  }): Promise<BatchResult<T>>
   /**
    * Runs a set of steps, or branches, in parallel. Each branch contains its own child durable context, with all usual `step` operations available.
    * @remarks This overload provides automatic type inference for heterogeneous branch return types. When branches return different types, the result will be `BatchResult<T1 | T2 | ...>`.
@@ -337,7 +355,15 @@ export type DurableOperations = {
   }: {
     name?: string
     branches: Branches
-  }): Promise<BatchResult<Branches[number] extends DurableStepFanoutHandler<infer ReturnType> ? ReturnType : never>>
+  }): Promise<
+    BatchResult<
+      Branches[number] extends DurableStepFanoutHandler<infer ReturnType>
+        ? ReturnType
+        : Branches[number] extends DurableStepFanoutNamedHandler<infer ReturnType>
+          ? ReturnType
+          : never
+    >
+  >
 
   /**
    * Calls another function and awaits its result.
