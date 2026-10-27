@@ -334,14 +334,14 @@ export type DurableOperations = {
    * Use the explicit type parameter overloads above for strict homogeneous type checking.
    * @example
    * ```ts
-   * step.fanout<string>({
+   * const results: BatchResult<string | number> = step.fanout({
    *   name: 'parallel-runs',
    *   branches: [async ({step, logger}) => {
    *    logger.log('Running first function in parallel')
    *    return 'first'
    *   }, async ({step, logger}) => {
    *    logger.log('Running second function in parallel')
-   *    return 'second'
+   *    return 2
    *   }],
    * })
    * ```
