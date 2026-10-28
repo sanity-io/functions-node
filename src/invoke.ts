@@ -207,9 +207,7 @@ export async function invoke<T = unknown>(name: string, payload: FunctionPayload
     await aws.SQS.SendMessage(message)
   } else if (resource.function && contextResource.type === 'sanity.function.durable') {
     await aws.Lambda.Invoke({
-      // Durable functions require a version qualifier
-      // TODO: RUN-1500 durable versioning support
-      FunctionName: `${resource.function.physicalResourceId}:$LATEST`,
+      FunctionName: `${resource.function.physicalResourceId}:live`,
       Payload: outgoingPayload,
       InvocationType: 'Event',
     })

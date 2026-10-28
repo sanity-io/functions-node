@@ -382,7 +382,7 @@ describe('invoke async is limited to event, queue and durable functions', () => 
     expect(awsLite.testing.getLastRequest('SQS.SendMessage').request.QueueUrl).toBe('https://my-queue')
   })
 
-  test(`starts a ${SANITY_FUNCTION_DURABLE} function with an async Lambda invoke of its latest version`, async () => {
+  test(`starts a ${SANITY_FUNCTION_DURABLE} function with an async Lambda invoke of its live version`, async () => {
     mockLambdaTarget()
 
     const payload = {event: {data: {hello: 'world'}}, context: contextForType(SANITY_FUNCTION_DURABLE)}
@@ -390,7 +390,7 @@ describe('invoke async is limited to event, queue and durable functions', () => 
 
     const {request} = awsLite.testing.getLastRequest('Lambda.Invoke')
     // Durable Lambdas reject an unqualified invoke
-    expect(request.FunctionName).toBe('my-durable-fn:$LATEST')
+    expect(request.FunctionName).toBe('my-durable-fn:live')
     expect(request.InvocationType).toBe('Event')
     expect(request.Payload).toEqual(outgoing(payload))
   })

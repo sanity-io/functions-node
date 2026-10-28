@@ -4,15 +4,13 @@ import type {BlueprintResource} from './resources.js'
 
 /**
  * Durable alias of FunctionsContext
- * @alpha Using durables is considered experimental and may change in the future.
- * @hidden
+ * @beta Using durables is considered experimental and may change in the future.
  */
 export type DurableContext = FunctionContext
 
 /**
  * Logger interface for durables.
- * @alpha Using durables is considered experimental and may change in the future.
- * @hidden
+ * @beta Using durables is considered experimental and may change in the future.
  */
 export interface DurableLogger {
   debug(...params: unknown[]): void
@@ -23,27 +21,27 @@ export interface DurableLogger {
 }
 
 /**
- * @alpha Using durables is considered experimental and may change in the future.
- * @hidden
+ * @beta Using durables is considered experimental and may change in the future.
  */
 export interface DurableStepCallbackContext {
   logger: DurableLogger
 }
 
 /**
- * Context parameter passed to a branch method of a `step.fanout` execution.
- * @alpha Using durables is considered experimental and may change in the future.
- * @hidden
+ * @beta Using durables is considered experimental and may change in the future.
  */
 export interface DurableStepContext extends DurableStepCallbackContext {
   step: DurableOperations
 }
+/**
+ * Context parameter passed to a branch method of a `step.fanout` execution.
+ * @beta Using durables is considered experimental and may change in the future.
+ */
 export interface DurableFanoutBranchContext extends DurableStepContext {}
 
 /**
  * Context parameter passed to the top-level `durableEventHandler` method.
- * @alpha Using durables is considered experimental and may change in the future.
- * @hidden
+ * @beta Using durables is considered experimental and may change in the future.
  */
 export interface DurableTopLevelContext extends DurableStepContext {
   context: DurableContext
@@ -52,18 +50,15 @@ export interface DurableTopLevelContext extends DurableStepContext {
 
 /**
  * Context parameter passed to the `waitForCallback` submitter method.
- * @alpha Using durables is considered experimental and may change in the future.
- * @hidden
+ * @beta Using durables is considered experimental and may change in the future.
  */
 export interface DurableCallbackSubmitterContext extends DurableStepCallbackContext {
   callbackId: string
 }
 
 /**
- * Arguments passed to callbacks that execute a durable attempt.
- * step.run & step.waitForCondition
- * @alpha Using durables is considered experimental and may change in the future.
- * @hidden
+ * Arguments passed to `step.run` & `step.waitForCondition` callbacks that execute a durable attempt.
+ * @beta Using durables is considered experimental and may change in the future.
  */
 export interface DurableStepAttemptContext extends DurableStepCallbackContext {
   /** Current attempt number, starting at 1. */
@@ -71,10 +66,9 @@ export interface DurableStepAttemptContext extends DurableStepCallbackContext {
 }
 
 /**
- * The signature of the duration object passed to the `wait` method of a durable function.
+ * The signature of the duration object passed to `wait`, `waitForCondition` and `waitForCallback` methods. It is also used when specifying the `retry.delay` of durable steps.
  * It can be specified in days, hours, minutes, or seconds.
- * @alpha Using durables is considered experimental and may change in the future.
- * @hidden
+ * @beta Using durables is considered experimental and may change in the future.
  */
 export type DurableDuration =
   | {days: number; hours?: number; minutes?: number; seconds?: number}
@@ -83,8 +77,7 @@ export type DurableDuration =
   | {seconds: number}
 
 /**
- * @alpha: Using durables is considered experimental and may change in the future.
- * @hidden
+ * @beta: Using durables is considered experimental and may change in the future.
  */
 export interface DurableRetryStrategy {
   maxAttempts?: number
@@ -93,32 +86,27 @@ export interface DurableRetryStrategy {
 }
 
 /**
- * @alpha Using durables is considered experimental and may change in the future.
- * @hidden
+ * @beta Using durables is considered experimental and may change in the future.
  */
 export type DurableWaitForConditionDecision = {shouldRetry: true; delay: DurableDuration} | {shouldRetry: false}
 
 /**
- * @alpha Using durables is considered experimental and may change in the future.
- * @hidden
+ * @beta Using durables is considered experimental and may change in the future.
  */
 export type DurableStepHandler<TArgs extends unknown[], TReturn> = (...args: TArgs) => TReturn
 
 /**
- * @alpha Using durables is considered experimental and may change in the future.
- * @hidden
+ * @beta Using durables is considered experimental and may change in the future.
  */
 export type DurableStepRunHandler<T = unknown> = DurableStepHandler<[context: DurableStepAttemptContext], T | Promise<T>>
 
 /**
- * @alpha Using durables is considered experimental and may change in the future.
- * @hidden
+ * @beta Using durables is considered experimental and may change in the future.
  */
 export type DurableStepFanoutHandler<T = unknown> = DurableStepHandler<[context: DurableFanoutBranchContext], T | Promise<T>>
 
 /**
- * @alpha Using durables is considered experimental and may change in the future.
- * @hidden
+ * @beta Using durables is considered experimental and may change in the future.
  */
 export type DurableStepFanoutNamedHandler<T = unknown> = {
   func: DurableStepHandler<[context: DurableFanoutBranchContext], T | Promise<T>>
@@ -126,20 +114,17 @@ export type DurableStepFanoutNamedHandler<T = unknown> = {
 }
 
 /**
- * @alpha Using durables is considered experimental and may change in the future.
- * @hidden
+ * @beta Using durables is considered experimental and may change in the future.
  */
 export type DurableStepWaitForCallbackSubmitter = DurableStepHandler<[context: DurableCallbackSubmitterContext], Promise<void>>
 
 /**
- * @alpha Using durables is considered experimental and may change in the future.
- * @hidden
+ * @beta Using durables is considered experimental and may change in the future.
  */
 export type DurableWaitForConditionPoller<T = unknown> = DurableStepHandler<[state: T, context: DurableStepAttemptContext], Promise<T>>
 
 /**
- * @alpha Using durables is considered experimental and may change in the future.
- * @hidden
+ * @beta Using durables is considered experimental and may change in the future.
  */
 export type DurableWaitForConditionNext<T = unknown> = DurableStepHandler<
   [state: T, context: Pick<DurableStepAttemptContext, 'attempt'>],
@@ -147,29 +132,29 @@ export type DurableWaitForConditionNext<T = unknown> = DurableStepHandler<
 >
 
 /**
- * @alpha Using durables is considered experimental and may change in the future.
- * @hidden
+ * @beta Using durables is considered experimental and may change in the future.
  */
 export type BatchItemSucceededStatus = 'SUCCEEDED'
+
 /**
- * @alpha Using durables is considered experimental and may change in the future.
+ * @beta Using durables is considered experimental and may change in the future.
  * @hidden
  */
 export type BatchItemFailedStatus = 'FAILED'
+
 /**
- * @alpha Using durables is considered experimental and may change in the future.
+ * @beta Using durables is considered experimental and may change in the future.
  * @hidden
  */
 export type BatchItemStartedStatus = 'STARTED'
+
 /**
- * @alpha Using durables is considered experimental and may change in the future.
- * @hidden
+ * @beta Using durables is considered experimental and may change in the future.
  */
 export type BatchItemStatus = BatchItemSucceededStatus | BatchItemFailedStatus | BatchItemStartedStatus
+
 /**
- * Reason why a batch operation (map, parallel, or concurrent execution)
- * completed.
- *
+ * Reason why a `step.fanout` operation completed.
  * - `ALL_COMPLETED`: every item finished.
  * - `MIN_SUCCESSFUL_REACHED`: CompletionConfig.minSuccessful was reached.
  * - `FAILURE_TOLERANCE_EXCEEDED`: a failure threshold was exceeded.
@@ -179,9 +164,7 @@ export type BatchItemStatus = BatchItemSucceededStatus | BatchItemFailedStatus |
  * - `CUSTOM_COMPLETION_FAILED`: a custom CompletionConfig.shouldComplete
  *   predicate signalled completion with a `FAILED` outcome before all items
  *   finished.
- * @alpha Using durables is considered experimental and may change in the future.
- * @hidden
- * @remarks copied from AWS Durable Execution SDK
+ * @beta Using durables is considered experimental and may change in the future.
  */
 export type CompletionReason =
   | 'ALL_COMPLETED'
@@ -189,11 +172,10 @@ export type CompletionReason =
   | 'FAILURE_TOLERANCE_EXCEEDED'
   | 'CUSTOM_COMPLETION_SUCCEEDED'
   | 'CUSTOM_COMPLETION_FAILED'
+
 /**
  * The result of a `step.fanout` branch.
- * @alpha Using durables is considered experimental and may change in the future.
- * @hidden
- * @remarks copied from AWS Durable Execution SDK
+ * @beta Using durables is considered experimental and may change in the future.
  */
 export interface BatchItem<TResult> {
   /** The result value if the item succeeded */
@@ -205,10 +187,9 @@ export interface BatchItem<TResult> {
   /** Status of the item execution */
   status: BatchItemStatus
 }
+
 /**
- * @alpha Using durables is considered experimental and may change in the future.
- * @hidden
- * @remarks copied from AWS Durable Execution SDK
+ * @beta Using durables is considered experimental and may change in the future.
  */
 export interface BatchResult<TResult> {
   /**
@@ -262,39 +243,39 @@ export interface BatchResult<TResult> {
 }
 
 /**
- * The interface defining the operations available to a durable function.
- * These operations are steps that delegate to other functions, and wait for external callbacks.
- * @alpha Using durables is considered experimental and may change in the future.
- * @hidden
+ * The interface defining the durable operations available to a durable function.
+ * @beta Using durables is considered experimental and may change in the future.
  */
 export type DurableOperations = {
   /**
-   * Runs a named step. Its result is recorded, so if the workflow re-runs the step
+   * Runs a named step. Its result is recorded, so if the durable re-runs the step
    * is not executed again. Failures are retried on their own.
-   * similar to ctx.step()
-   * @remarks cannot be nested inside another step
    * @example
    * ```ts
-   * step.run({
+   * const hi = await step.run({
    *   name: 'run-step',
    *   handler: async ({logger}) => {
    *    logger.log('Running step')
+   *    return 'hi'
    *  }})
    * ```
    *
    * @example
    * ```ts
    * // With a retry config
-   * step.run({
+   * const hello = await step.run({
    *   name: 'run-with-retry'
-   *   handler: () => { // handler code }
+   *   handler: () => {
+   *     if (Math.random() > 0.5) throw new Error('random error!')
+   *     return 'hello'
+   *   }
    *   retry: { maxAttempts: 2, delay: { seconds: 5 } }
    * })
    * ```
    * @param name - Step name
    * @param handler - function being executed
    * @param retry - retry configuration
-   * @returns The value returned by the executed function
+   * @returns The value returned by the provided handler
    */
   run<T>({name, handler, retry}: {name?: string; handler: DurableStepRunHandler<T>; retry?: DurableRetryStrategy}): Promise<T>
 
@@ -303,7 +284,7 @@ export type DurableOperations = {
    * @remarks By using the generic, you can set a single, homogeneous return type for all branches.
    * @example
    * ```ts
-   * step.fanout<string>({
+   * const results: BatchResult<string> = await step.fanout<string>({
    *   name: 'parallel-runs',
    *   branches: [async ({step, logger}) => {
    *    logger.log('Running first function in parallel')
@@ -334,7 +315,7 @@ export type DurableOperations = {
    * Use the explicit type parameter overloads above for strict homogeneous type checking.
    * @example
    * ```ts
-   * const results: BatchResult<string | number> = step.fanout({
+   * const results: BatchResult<string | number> = await step.fanout({
    *   name: 'parallel-runs',
    *   branches: [async ({step, logger}) => {
    *    logger.log('Running first function in parallel')
@@ -366,27 +347,25 @@ export type DurableOperations = {
   >
 
   /**
-   * Calls another function and awaits its result.
-   * similar to ctx.invoke()
-   * @remarks cannot be nested inside another step
+   * Invokes another function, of type durable or pubsub, and awaits its result. While awaiting, the durable function shuts down, so you are not charged for compute.
    * @example
    * ```ts
    * // my-delegated-function/index.ts
-   * export const handler = pubSubEventHandler({event}) => {
-   *    ...
-   * }
+   * export const handler = pubSubEventHandler(({event}) => {
+   *   return 'yo'
+   * })
    *
    * // my-resource/index.ts
-   * export const handler = pubSubEventHandler({event}) => {
-   *    ...
-   * }
+   * export const handler = pubSubEventHandler(({event}) => {
+   *   return 'hey'
+   * })
    *
    * // my-durable-function/index.ts
-   * durableEventHandler(({step, context}) => {
+   * export const handler = durableEventHandler(({step, context}) => {
    *   // With a function name
-   *   step.delegate({name: 'my-function', handler: 'my-delegated-function', event: {data: {hello: 'world'}}})
+   *   const firstResult = await step.delegate({name: 'first-delegation', handler: 'my-delegated-function', event: {data: {hello: 'world'}}})
    *   // With a resource object
-   *   step.delegate({name: 'another-function', handler: context.resource.function('my-resource'), event: {data: {hello: 'world'}}})
+   *   const secondResult = await step.delegate({name: 'second-delegation', handler: context.resource.function('my-resource'), event: {data: {hello: 'world'}}})
    * })
    * ```
    * @param name - Step name
@@ -406,13 +385,16 @@ export type DurableOperations = {
   }): Promise<T>
 
   /**
-   * Generates a unique callback ID, runs a handler to pass the ID to an external system and waits for some external system to POST JSON data to a Sanity Durable callback API.
+   * Generates a unique callback ID, runs a submitter function to pass the ID to an external system and waits for some external system to POST JSON data to a Sanity Durable callback API using the callback ID.
    * @example
-   * Wait for 30 seconds
    * ```ts
-   * await step.waitForCallback({name: 'ask-for-permission', submitter: async ({callbackId}) => {
-   *   await sendForApproval(callbackId)
-   * }});
+   * try {
+   *   const successfulResult = await step.waitForCallback({name: 'ask-for-permission', submitter: async ({callbackId}) => {
+   *     await sendForApproval(callbackId)
+   *   }})
+   * } catch (e) {
+   *   logger.log('oh no we received a callback failure', e)
+   * }
    * ```
    * ```
    * @param name - Step name
@@ -435,8 +417,6 @@ export type DurableOperations = {
 
   /**
    * Waits for a specified duration
-   * similar to ctx.wait()
-   * @remarks cannot be nested inside another step
    * @example
    * Wait for 30 seconds
    * ```ts
@@ -448,35 +428,31 @@ export type DurableOperations = {
    * ```
    * @param name - Step name
    * @param duration - Amount of time the function will wait before continuing.
-   * Duration is an object with properties of `seconds`, `minutes`, `hours`, or `days`. Must be at least {seconds: 1}
    * @returns Resolves after the duration
    */
   wait({name, duration}: {name?: string; duration: DurableDuration}): Promise<void>
 
   /**
-   * Waits for a specified condition to be met
-   * similar to ctx.waitForCondition()
-   * @remarks cannot be nested inside another step
+   * Waits for a specified condition to be met by executing a `poller` method to retrieve state and then inspecting the retrieved state in a `next` method to determine whether to retry and after what delay to do so.
    * @example
    * ```ts
    * await step.waitForCondition({{
-   *     name: 'waitForCondition',
-   *     initial: {
-   *       article: null,
-   *     },
-   *     poller: async (state, {attempt}) => {
-   *         const client = createClient({
-   *            apiVersion: '2026-08-05',
-   *            ...context.clientOptions,
-   *          })
-   *          const article = await client.fetch<Article | null>(
-   *            '*[_type == "article"][0]',
-   *          )
-   *         return {...state, article}
-   *     }
-   *     next: (state, {attempt}) => {
-   *       if (state.article) return {shouldRetry: false}
-   *
+   *   name: 'waitForCondition',
+   *   initial: {
+   *     article: null as Article | null,
+   *   },
+   *   poller: async (state, {attempt}) => {
+   *     const client = createClient({
+   *       apiVersion: '2026-08-05',
+   *       ...context.clientOptions,
+   *     })
+   *     const article = await client.fetch<Article | null>(
+   *       '*[_type == "article"][0]',
+   *     )
+   *     return {...state, article}
+   *   },
+   *   next: (state, {attempt}) => {
+   *     if (state.article) return {shouldRetry: false}
    *       return {
    *         shouldRetry: true,
    *         delay: {
@@ -509,7 +485,6 @@ export type DurableOperations = {
 }
 
 /**
- * @alpha Using durables is considered experimental and may change in the future.
- * @hidden
+ * @beta Using durables is considered experimental and may change in the future.
  */
 export type DurableHandler = (envelope: DurableTopLevelContext) => unknown | Promise<unknown>
