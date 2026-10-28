@@ -433,7 +433,7 @@ export type DurableOperations = {
   wait({name, duration}: {name?: string; duration: DurableDuration}): Promise<void>
 
   /**
-   * Waits for a specified condition to be met
+   * Waits for a specified condition to be met by executing a `poller` method to retrieve state and then inspecting the retrieved state in a `next` method to determine whether to retry and after what delay to do so.
    * @example
    * ```ts
    * await step.waitForCondition({{

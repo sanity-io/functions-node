@@ -97,7 +97,7 @@ export function durableEventHandler(handler: DurableHandler): DurableHandler & {
 
 /**
  * Durables creation function that can be called with or without a config object.
- * @bet Durables are an experimental feature and may change in the future.
+ * @beta Durables are an experimental feature and may change in the future.
  * @param config
  * @param handler
  * @returns  The handler function, unmodified and the provided config object.
