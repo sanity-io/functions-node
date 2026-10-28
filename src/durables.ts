@@ -2,19 +2,21 @@ import type {DurableHandler} from './types/durables.js'
 
 /**
  * Error type indicating an unrecoverable error in a durable function.
- * Used to override the retry behavior in a durable step operation.
- * @alpha Durable functions are an experimental feature and may change in the future.
- * @hidden
+ * Used to abort any remaining retry behavior in a durable step operation.
+ * @beta Durable functions are an experimental feature and may change in the future.
  * @example
  * ```ts
  * const handler = durableEventHandler(async ({step}) => {
- *   async step.run(async ({attempt}) => {
- *     // step.run code
+ *   const user = await step.run({name: 'get-user', handler: async ({attempt}) => {
+ *     try {
+ *       return await getUser('some-user')
+ *     } catch (err) {
+ *       if (err instanceof UserNotFound) {
+ *         throw new UnrecoverableError(err)
+ *       }
+ *       throw err
+ *     }
  *   }, retry: {maxAttempts: 3})
- * }).catch((err) => {
- *   if (err instanceof UserNotFound) {
- *     throw new UnrecoverableError(err)
- *   }
  * })
  * ```
  */
@@ -43,7 +45,7 @@ const resolveFuncArgs = <TConfig extends {name: string; durableTimeout?: number}
  * @returns Errors while validating a config object
  */
 const validateConfig = (config: unknown) => {
-  const EVENT_TYPES = ['document', 'media-library', 'cron', 'sync-tag-invalidate']
+  const EVENT_TYPES = ['document', 'media-library', 'sync-tag-invalidate']
   const errors: string[] = []
 
   if (config === undefined || config === null) {
@@ -87,59 +89,7 @@ const validateConfig = (config: unknown) => {
 
 /**
  * Durables creation function that can be called with or without a config object.
- * @alpha Durables are an experimental feature and may change in the future.
- * @hidden
- * @param  handler
- * @deprecated Use `durableEventHandler` instead
- * @returns The handler function, unmodified.
- */
-export function createDurable(handler: DurableHandler): DurableHandler & {config?: undefined}
-
-/**
- * Durables creation function that can be called with or without a config object.
- * @alpha Durables are an experimental feature and may change in the future.
- * @hidden
- * @param config
- * @param handler
- * @deprecated Use `durableEventHandler` instead
- * @returns  The handler function, unmodified and the provided config object.
- */
-export function createDurable<TConfig extends {name: string; durableTimeout?: number}>(
-  config: TConfig,
-  handler: DurableHandler,
-): DurableHandler & {config: TConfig}
-
-/**
- * Durables creation function that can be called with or without a config object.
- * @alpha Durable functions are an experimental feature and may change in the future.
- * @hidden
- * @public
- * @param configOrHandler
- * @param maybeHandler
- * @deprecated Use `durableEventHandler` instead
- * @returns The handler function, unmodified and the config object if provided
- */
-export function createDurable<TConfig extends {name: string; durableTimeout?: number}>(
-  configOrHandler: TConfig | DurableHandler,
-  maybeHandler?: DurableHandler,
-): DurableHandler {
-  const {config, handler, hadConfigArg} = resolveFuncArgs(configOrHandler, maybeHandler)
-  const errors = [
-    ...(hadConfigArg ? validateConfig(config) : []),
-    ...(typeof handler !== 'function' ? ['`handler` must be a function'] : []),
-  ]
-
-  if (errors.length > 0) {
-    throw new TypeError(errors.join(', '))
-  }
-  // Separate config from the handler during build
-  return Object.assign(handler as DurableHandler, {config})
-}
-
-/**
- * Durables creation function that can be called with or without a config object.
- * @alpha Durables are an experimental feature and may change in the future.
- * @hidden
+ * @beta Durables are an experimental feature and may change in the future.
  * @param  handler
  * @returns The handler function, unmodified.
  */
@@ -147,8 +97,7 @@ export function durableEventHandler(handler: DurableHandler): DurableHandler & {
 
 /**
  * Durables creation function that can be called with or without a config object.
- * @alpha Durables are an experimental feature and may change in the future.
- * @hidden
+ * @bet Durables are an experimental feature and may change in the future.
  * @param config
  * @param handler
  * @returns  The handler function, unmodified and the provided config object.
@@ -160,8 +109,7 @@ export function durableEventHandler<TConfig extends {name: string; durableTimeou
 
 /**
  * Durables creation function that can be called with or without a config object.
- * @alpha Durable functions are an experimental feature and may change in the future.
- * @hidden
+ * @beta Durable functions are an experimental feature and may change in the future.
  * @public
  * @param configOrHandler
  * @param maybeHandler
@@ -185,8 +133,7 @@ export function durableEventHandler<TConfig extends {name: string; durableTimeou
 }
 
 /**
- * @alpha Durable functions are an experimental feature and may change in the future.
- * @hidden
+ * @beta Durable functions are an experimental feature and may change in the future.
  * @public
  */
-export const durable = {durableEventHandler, createDurable}
+export const durable = {durableEventHandler}

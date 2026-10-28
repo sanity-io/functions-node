@@ -1,5 +1,5 @@
 import {describe, expect, test} from 'vitest'
-import {createDurable, type DurableHandler, durableEventHandler, UnrecoverableError} from '../src/index.js'
+import {type DurableHandler, durableEventHandler, UnrecoverableError} from '../src/index.js'
 
 describe('UnrecoverableError', () => {
   test('is an Error', () => {
@@ -8,79 +8,6 @@ describe('UnrecoverableError', () => {
     expect(error).toBeInstanceOf(Error)
     expect(error.name).toBe('UnrecoverableError')
     expect(error.message).toBe('cannot retry')
-  })
-})
-
-describe('createDurable', () => {
-  test('returns handler with config attached', () => {
-    const config = {name: 'my-durable'}
-    const handler: DurableHandler = () => {}
-
-    const result = createDurable(config, handler)
-
-    expect(result).toBe(handler)
-    expect(result.config).toBe(config)
-  })
-
-  test('returns handler with no config', () => {
-    const handler: DurableHandler = () => {}
-
-    const result = createDurable(handler)
-
-    expect(result).toBe(handler)
-    expect(result.config).toBeUndefined()
-  })
-
-  test('throws if config is `undefined`', () => {
-    expect(() => {
-      // @ts-expect-error Intentionally wrong type
-      createDurable(undefined, () => {})
-    }).toThrowErrorMatchingInlineSnapshot(`[TypeError: \`config\` must be defined]`)
-  })
-
-  test('throws if config is not an object', () => {
-    expect(() => {
-      // @ts-expect-error Intentionally wrong type
-      createDurable('bad', () => {})
-    }).toThrow('`config` must be an object')
-  })
-
-  test('throws if config.name is not a string', () => {
-    expect(() => {
-      // @ts-expect-error Intentionally wrong type
-      createDurable({name: 123}, () => {})
-    }).toThrow('`config.name` must be a string')
-  })
-
-  test('throws if config.event is not an object', () => {
-    expect(() => {
-      createDurable({name: 'test', event: 'not-an-object'}, () => {})
-    }).toThrow('`event` must be an object')
-  })
-
-  test('throws if config.event.type is not one of the allowed types', () => {
-    expect(() => {
-      createDurable({name: 'test', event: {type: 'media'}}, () => {})
-    }).toThrow('`event.type` must be one of: document, media-library, cron, sync-tag-invalidate')
-  })
-
-  test('throws if handler is not a function', () => {
-    expect(() => {
-      // @ts-expect-error Intentionally wrong type
-      createDurable({name: 'test'}, 'not-a-function')
-    }).toThrow('`handler` must be a function')
-  })
-
-  test('throws if `durableTimeout` is less than 60 seconds', () => {
-    expect(() => {
-      createDurable({name: 'test', durableTimeout: 59}, () => {})
-    }).toThrow('`config.durableTimeout` must be at least 60 seconds')
-  })
-
-  test('throws if `durableTimeout` is more than 31_536_000 seconds (1 year)', () => {
-    expect(() => {
-      createDurable({name: 'test', durableTimeout: 31_536_001}, () => {})
-    }).toThrow('`config.durableTimeout` must be at most 31_536_000 (1 year) seconds')
   })
 })
 
@@ -134,7 +61,7 @@ describe('durableEventHandler', () => {
   test('throws if config.event.type is not one of the allowed types', () => {
     expect(() => {
       durableEventHandler({name: 'test', event: {type: 'media'}}, () => {})
-    }).toThrow('`event.type` must be one of: document, media-library, cron, sync-tag-invalidate')
+    }).toThrow('`event.type` must be one of: document, media-library, sync-tag-invalidate')
   })
 
   test('throws if handler is not a function', () => {
