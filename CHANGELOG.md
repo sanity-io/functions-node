@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.11.0](https://github.com/sanity-io/functions-node/compare/v1.10.1...v1.11.0) (2026-10-28)
+
+
+### Features
+
+* add support for func-to-func invoke of durables ([#91](https://github.com/sanity-io/functions-node/issues/91)) ([072e2ca](https://github.com/sanity-io/functions-node/commit/072e2ca316f7901d3bcd448934656fed2f6d77a8))
+* support for named fanout branches ([#93](https://github.com/sanity-io/functions-node/issues/93)) ([b049ab7](https://github.com/sanity-io/functions-node/commit/b049ab729b77b8448c90a362ee8d33f8d300a676))
+
+
+### Bug Fixes
+
+* unhiding TSDoc for durables ([#95](https://github.com/sanity-io/functions-node/issues/95)) ([93420bf](https://github.com/sanity-io/functions-node/commit/93420bff8b858a9b55a0716b6916c8ed0472c213))
+
 ## [1.10.1](https://github.com/sanity-io/functions-node/compare/v1.10.0...v1.10.1) (2026-10-17)
 
 
