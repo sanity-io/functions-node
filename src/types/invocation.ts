@@ -13,3 +13,10 @@ export type InvokeOptions = {
   // Whether the function should be invoked synchronously
   sync?: boolean
 }
+
+/**
+ * Optional information on the invoker
+ */
+export type InvokedBy = {
+  userId: string
+}

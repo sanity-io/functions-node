@@ -1,4 +1,4 @@
-import type {InvokeCallback} from './invocation.js'
+import type {InvokeCallback, InvokedBy} from './invocation.js'
 import type {ResourcesApi} from './resources.js'
 
 /**
@@ -13,6 +13,8 @@ export interface FunctionContext {
   functionResourceType: string
   /** The resource ID of the function container; resource ID that houses the function. */
   functionResourceId: string
+  /** Optional info on the invoker of the function */
+  invokedBy?: InvokedBy
   /** Sanity lineage token */
   lineage?: string | undefined
   /**
