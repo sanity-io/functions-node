@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.11.1](https://github.com/sanity-io/functions-node/compare/v1.11.0...v1.11.1) (2026-11-19)
+
+
+### Bug Fixes
+
+* add `invokedBy` to the `context` ([#96](https://github.com/sanity-io/functions-node/issues/96)) ([cb7231f](https://github.com/sanity-io/functions-node/commit/cb7231fcc9f55297d54dc68b34f722a48665ef8c))
+
 ## [1.11.0](https://github.com/sanity-io/functions-node/compare/v1.10.1...v1.11.0) (2026-10-28)
 
 
