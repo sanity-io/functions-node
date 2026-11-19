@@ -53,17 +53,18 @@ export const normalizeDelay = (delay: string | Partial<DurableDuration>): Partia
     return delay
   }
 
+  let duration = parseDuration(delay, 'ms')
   const result: Record<string, number> = {}
-  const tokens = delay.trim().split(/\s+/)
-  const validUnits = new Set(['days', 'hours', 'minutes', 'seconds'])
 
-  for (let i = 0; i < tokens.length; i += 2) {
-    const value = Number(tokens[i])
-    const unit = tokens[i + 1]
-    if (!validUnits.has(unit)) {
-      throw new TypeError(`Invalid delay unit: ${unit}. Please enter a delay unit of: ${[...validUnits].join(', ')}`)
-    }
-    result[unit] = value
+  for (const [key, unit] of [
+    ['days', 'd'],
+    ['hours', 'h'],
+    ['minutes', 'm'],
+    ['seconds', 's'],
+  ] as const) {
+    const value = Math.floor(duration / units[unit])
+    if (value) result[key] = value
+    duration -= value * units[unit]
   }
 
   return result
@@ -131,6 +132,10 @@ const validateConfig = (config: unknown) => {
   if (typeof name !== 'string') errors.push('`config.name` must be a string')
 
   if ('durableTimeout' in config) {
+    if (typeof config.durableTimeout !== 'number' && typeof config.durableTimeout !== 'string') {
+      errors.push('`durableTimeout` is not a valid duration')
+    }
+
     const duration = typeof config.durableTimeout === 'string' ? parseDuration(config.durableTimeout, 's') : config.durableTimeout
     if (typeof duration === 'number') {
       if (duration < 60) {
