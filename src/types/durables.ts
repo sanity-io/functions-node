@@ -66,6 +66,7 @@ export interface DurableStepAttemptContext extends DurableStepCallbackContext {
 }
 
 /**
+ * @deprecated - use string notation instead `delay: 10 seconds` | `timeout: 1 min`
  * The signature of the duration object passed to `wait`, `waitForCondition` and `waitForCallback` methods. It is also used when specifying the `retry.delay` of durable steps.
  * It can be specified in days, hours, minutes, or seconds.
  * @beta Using durables is considered experimental and may change in the future.
@@ -81,8 +82,7 @@ export type DurableDuration =
  */
 export interface DurableRetryStrategy {
   maxAttempts?: number
-  // @todo: tie this to a string like "5s" or "1m" and normalize it to a duration object
-  delay?: DurableDuration
+  delay?: DurableDuration | string
 }
 
 /**
@@ -97,7 +97,7 @@ export type DurableWaitForConditionDecision =
        * @example '1 days 2 hours'
        * @example '1 days 2 hours 30 minutes 15 seconds'
        */
-      delay: string
+      delay: DurableDuration | string
     }
   | {shouldRetry: false}
 
@@ -422,7 +422,7 @@ export type DurableOperations = {
   }: {
     name?: string
     submitter: DurableStepWaitForCallbackSubmitter
-    timeout?: DurableDuration
+    timeout?: DurableDuration | string
     retry?: DurableRetryStrategy
   }): Promise<T>
 
@@ -442,7 +442,7 @@ export type DurableOperations = {
    * Duration is a string of `<number> <unit>` pairs. Must be at least '1 second'
    * @returns Resolves after the duration
    */
-  wait({name, duration}: {name?: string; duration: string}): Promise<void>
+  wait({name, duration}: {name?: string; duration: DurableDuration | string}): Promise<void>
 
   /**
    * Waits for a specified condition to be met by executing a `poller` method to retrieve state and then inspecting the retrieved state in a `next` method to determine whether to retry and after what delay to do so.

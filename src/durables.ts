@@ -32,7 +32,7 @@ export const parseDuration = (duration: string | number, unit: DurationUnit = 's
   const parsed = typeof duration === 'number' ? duration : parse(duration, unit)
 
   if (parsed === null || !Number.isFinite(parsed)) {
-    throw new Error(`Invalid duration: ${duration}`)
+    throw new TypeError(`Invalid duration: ${duration}`)
   }
 
   return parsed
@@ -44,16 +44,24 @@ export const parseDuration = (duration: string | number, unit: DurationUnit = 's
  * @return A normalized delay object with keys as DelayUnits and values as numbers.
  * @throws Error if the delay string contains invalid units.
  */
-export const normalizeDelay = (delay: string): Partial<DurableDuration> => {
-  const tokens = delay.trim().split(/\s+/)
+export const normalizeDelay = (delay: string | Partial<DurableDuration>): Partial<DurableDuration> => {
+  /**
+   * using the old Object method.
+   * @todo: remove once its safe!
+   */
+  if (typeof delay !== 'string') {
+    return delay
+  }
+
   const result: Record<string, number> = {}
+  const tokens = delay.trim().split(/\s+/)
   const validUnits = new Set(['days', 'hours', 'minutes', 'seconds'])
 
   for (let i = 0; i < tokens.length; i += 2) {
     const value = Number(tokens[i])
     const unit = tokens[i + 1]
     if (!validUnits.has(unit)) {
-      throw new Error(`Invalid delay unit: ${unit}`)
+      throw new TypeError(`Invalid delay unit: ${unit}. Please enter a delay unit of: ${[...validUnits].join(', ')}`)
     }
     result[unit] = value
   }
