@@ -53,15 +53,39 @@ export const normalizeDelay = (delay: string | Partial<DurableDuration>): Partia
     return delay
   }
 
+  // Same day/hour/minute/second aliases parse-duration accepts, stored as AWS delay keys.
+  const delayUnits: Record<string, 'days' | 'hours' | 'minutes' | 'seconds'> = {
+    d: 'days',
+    day: 'days',
+    days: 'days',
+    h: 'hours',
+    hr: 'hours',
+    hrs: 'hours',
+    hour: 'hours',
+    hours: 'hours',
+    m: 'minutes',
+    min: 'minutes',
+    mins: 'minutes',
+    minute: 'minutes',
+    minutes: 'minutes',
+    s: 'seconds',
+    sec: 'seconds',
+    secs: 'seconds',
+    second: 'seconds',
+    seconds: 'seconds',
+  }
   const result: Record<string, number> = {}
-  const tokens = delay.trim().split(/\s+/)
-  const validUnits = new Set(['days', 'hours', 'minutes', 'seconds'])
+  const tokens = delay
+    .trim()
+    .split(/[\s,]+/)
+    .filter((token) => token !== '')
 
   for (let i = 0; i < tokens.length; i += 2) {
     const value = Number(tokens[i])
-    const unit = tokens[i + 1]
-    if (!validUnits.has(unit)) {
-      throw new TypeError(`Invalid delay unit: ${unit}. Please enter a delay unit of: ${[...validUnits].join(', ')}`)
+    const rawUnit = tokens[i + 1]
+    const unit = rawUnit ? delayUnits[rawUnit.toLowerCase()] : undefined
+    if (!unit) {
+      throw new TypeError(`Invalid delay unit: ${rawUnit}. Please enter a delay unit of: days, hours, minutes, seconds`)
     }
     result[unit] = value
   }

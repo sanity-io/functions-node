@@ -11,6 +11,17 @@ describe('normalizeDelay', () => {
   test('converts a delay string to an AWS duration', () => {
     expect(normalizeDelay('2 days 3 hours')).toStrictEqual({days: 2, hours: 3})
   })
+
+  test('accepts singular units, abbreviations, and comma-separated values', () => {
+    expect(normalizeDelay('1 minute')).toStrictEqual({minutes: 1})
+    expect(normalizeDelay('1 min')).toStrictEqual({minutes: 1})
+    expect(normalizeDelay('1 day, 2 hours')).toStrictEqual({days: 1, hours: 2})
+    expect(normalizeDelay('1 hr, 30 secs')).toStrictEqual({hours: 1, seconds: 30})
+  })
+
+  test('rejects units outside days, hours, minutes, and seconds', () => {
+    expect(() => normalizeDelay('1 week')).toThrow(TypeError)
+  })
 })
 
 describe('UnrecoverableError', () => {
