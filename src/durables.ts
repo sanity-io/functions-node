@@ -56,11 +56,11 @@ export const normalizeDelay = (delay: string | Partial<DurableDuration>): Partia
 
   let duration = parseDuration(delay, 'ms')
   if (duration % 1000 !== 0) {
-    throw new Error('Duration must be a whole number greater then 1 second')
+    throw new Error('Duration must be a whole number greater then or equal to 1 second')
   }
 
   if (duration < 1000) {
-    throw new Error('Duration must be greater than 1 second')
+    throw new Error('Duration must be greater than or equal to 1 second')
   }
 
   const result: Record<string, number> = {}
