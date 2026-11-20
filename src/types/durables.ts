@@ -66,9 +66,9 @@ export interface DurableStepAttemptContext extends DurableStepCallbackContext {
 }
 
 /**
- * @deprecated - use string notation instead `delay: 10 seconds` | `timeout: 1 min`
  * The signature of the duration object passed to `wait`, `waitForCondition` and `waitForCallback` methods. It is also used when specifying the `retry.delay` of durable steps.
  * It can be specified in days, hours, minutes, or seconds.
+ * @deprecated - use string notation instead `delay: 10 seconds` | `timeout: 1 min`
  * @beta Using durables is considered experimental and may change in the future.
  */
 export type DurableDuration =
@@ -422,7 +422,20 @@ export type DurableOperations = {
   }: {
     name?: string
     submitter: DurableStepWaitForCallbackSubmitter
-    timeout?: DurableDuration | string
+    timeout?: string
+    retry?: DurableRetryStrategy
+  }): Promise<T>
+
+  /** @deprecated Use a duration string instead, e.g. `'30 seconds'`. */
+  waitForCallback<T>({
+    name,
+    submitter,
+    timeout,
+    retry,
+  }: {
+    name?: string
+    submitter: DurableStepWaitForCallbackSubmitter
+    timeout?: DurableDuration
     retry?: DurableRetryStrategy
   }): Promise<T>
 
@@ -442,7 +455,9 @@ export type DurableOperations = {
    * Duration is a string of `<number> <unit>` pairs. Must be at least '1 second'
    * @returns Resolves after the duration
    */
-  wait({name, duration}: {name?: string; duration: DurableDuration | string}): Promise<void>
+  wait({name, duration}: {name?: string; duration: string}): Promise<void>
+  /** @deprecated Use a duration string instead, e.g. `'30 seconds'`. */
+  wait({name, duration}: {name?: string; duration: DurableDuration}): Promise<void>
 
   /**
    * Waits for a specified condition to be met by executing a `poller` method to retrieve state and then inspecting the retrieved state in a `next` method to determine whether to retry and after what delay to do so.

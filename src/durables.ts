@@ -5,10 +5,9 @@ type DurationUnit = 'ms' | 's' | 'm' | 'h' | 'd' | 'w' | 'mo' | 'y'
 
 const YEAR_IN_SEC = 31_536_000
 const YEAR_IN_MS = YEAR_IN_SEC * 1000
-const units = parse.unit as Record<string, number>
 
 // Extend the units object because of the calculations of parse-duration of year to secs - `31557600000`
-Object.assign(units, {
+const AWS_UNITS = Object.assign(Object.create(null), parse.unit, {
   year: YEAR_IN_MS,
   yr: YEAR_IN_MS,
   y: YEAR_IN_MS,
@@ -16,10 +15,6 @@ Object.assign(units, {
   month: YEAR_IN_MS / 12,
   mth: YEAR_IN_MS / 12,
   mo: YEAR_IN_MS / 12,
-
-  week: YEAR_IN_MS / 52,
-  wk: YEAR_IN_MS / 52,
-  w: YEAR_IN_MS / 52,
 })
 
 /**
@@ -29,13 +24,19 @@ Object.assign(units, {
  * @return The parsed duration in the specified unit.
  */
 export const parseDuration = (duration: string | number, unit: DurationUnit = 's'): number => {
-  const parsed = typeof duration === 'number' ? duration : parse(duration, unit)
+  const resetParser = parse.unit
+  ;(parse.unit as Record<string, number>) = AWS_UNITS
+  try {
+    const parsed = typeof duration === 'number' ? duration : parse(duration, unit)
 
-  if (parsed === null || !Number.isFinite(parsed)) {
-    throw new TypeError(`Invalid duration: ${duration}`)
+    if (parsed === null || !Number.isFinite(parsed)) {
+      throw new TypeError(`Invalid duration: ${duration}`)
+    }
+
+    return parsed
+  } finally {
+    parse.unit = resetParser
   }
-
-  return parsed
 }
 
 /**
@@ -54,6 +55,14 @@ export const normalizeDelay = (delay: string | Partial<DurableDuration>): Partia
   }
 
   let duration = parseDuration(delay, 'ms')
+  if (duration % 1000 !== 0) {
+    throw new Error('Duration must be a whole number greater then 1 second')
+  }
+
+  if (duration < 1000) {
+    throw new Error('Duration must be greater than 1 second')
+  }
+
   const result: Record<string, number> = {}
 
   for (const [key, unit] of [
@@ -62,9 +71,9 @@ export const normalizeDelay = (delay: string | Partial<DurableDuration>): Partia
     ['minutes', 'm'],
     ['seconds', 's'],
   ] as const) {
-    const value = Math.floor(duration / units[unit])
+    const value = Math.floor(duration / AWS_UNITS[unit])
     if (value) result[key] = value
-    duration -= value * units[unit]
+    duration -= value * AWS_UNITS[unit]
   }
 
   return result

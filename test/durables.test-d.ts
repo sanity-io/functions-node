@@ -213,7 +213,7 @@ describe('DurableOperations.wait', () => {
     step.wait({name: 'delay', duration: 30})
 
     // @ts-expect-error durations are required
-    step.wait({name: 'delay'})
+    step.wait({name: 'delay', duration: {}})
   })
 })
 
