@@ -1,4 +1,83 @@
-import type {DurableHandler} from './types/durables.js'
+import parse from 'parse-duration'
+import type {DurableDuration, DurableHandler} from './types/durables.js'
+
+type DurationUnit = 'ms' | 's' | 'm' | 'h' | 'd' | 'w' | 'mo' | 'y'
+
+const YEAR_IN_SEC = 31_536_000
+const YEAR_IN_MS = YEAR_IN_SEC * 1000
+
+// Extend the units object because of the calculations of parse-duration of year to secs - `31557600000`
+const AWS_UNITS = Object.assign(Object.create(null), parse.unit, {
+  year: YEAR_IN_MS,
+  yr: YEAR_IN_MS,
+  y: YEAR_IN_MS,
+
+  month: YEAR_IN_MS / 12,
+  mth: YEAR_IN_MS / 12,
+  mo: YEAR_IN_MS / 12,
+})
+
+/**
+ * Parses a duration string or number into a number in the specified unit.
+ * @param duration
+ * @param unit
+ * @return The parsed duration in the specified unit.
+ */
+export const parseDuration = (duration: string | number, unit: DurationUnit = 's'): number => {
+  const resetParser = parse.unit
+  ;(parse.unit as Record<string, number>) = AWS_UNITS
+  try {
+    const parsed = typeof duration === 'number' ? duration : parse(duration, unit)
+
+    if (parsed === null || !Number.isFinite(parsed)) {
+      throw new TypeError(`Invalid duration: ${duration}`)
+    }
+
+    return parsed
+  } finally {
+    parse.unit = resetParser
+  }
+}
+
+/**
+ * Converts a delay string into an aws like delay object with keys as DelayUnits and values as numbers.
+ * @param delay
+ * @return A normalized delay object with keys as DelayUnits and values as numbers.
+ * @throws Error if the delay string contains invalid units.
+ */
+export const normalizeDelay = (delay: string | Partial<DurableDuration>): Partial<DurableDuration> => {
+  /**
+   * using the old Object method.
+   * @todo: remove once its safe!
+   */
+  if (typeof delay !== 'string') {
+    return delay
+  }
+
+  let duration = parseDuration(delay, 'ms')
+  if (duration % 1000 !== 0) {
+    throw new Error('Duration must be a whole number greater then or equal to 1 second')
+  }
+
+  if (duration < 1000) {
+    throw new Error('Duration must be greater than or equal to 1 second')
+  }
+
+  const result: Record<string, number> = {}
+
+  for (const [key, unit] of [
+    ['days', 'd'],
+    ['hours', 'h'],
+    ['minutes', 'm'],
+    ['seconds', 's'],
+  ] as const) {
+    const value = Math.floor(duration / AWS_UNITS[unit])
+    if (value) result[key] = value
+    duration -= value * AWS_UNITS[unit]
+  }
+
+  return result
+}
 
 /**
  * Error type indicating an unrecoverable error in a durable function.
@@ -30,7 +109,7 @@ export class UnrecoverableError extends Error {
  * @param maybeHandler
  * @returns resolved arguments
  */
-const resolveFuncArgs = <TConfig extends {name: string; durableTimeout?: number}>(
+const resolveFuncArgs = <TConfig extends {name: string; durableTimeout?: string | number}>(
   configOrHandler: TConfig | DurableHandler,
   maybeHandler?: DurableHandler,
 ): {config?: TConfig; handler?: DurableHandler; hadConfigArg: boolean} => {
@@ -60,16 +139,21 @@ const validateConfig = (config: unknown) => {
   const name = 'name' in config ? config.name : undefined
   const event = 'event' in config ? config.event : undefined
   if (typeof name !== 'string') errors.push('`config.name` must be a string')
-  if ('durableTimeout' in config && typeof config.durableTimeout !== 'number') {
-    errors.push('`config.durableTimeout` must be a number')
-  }
 
-  if ('durableTimeout' in config && typeof config.durableTimeout === 'number') {
-    if (config.durableTimeout < 60) {
-      errors.push('`config.durableTimeout` must be at least 60 seconds')
+  if ('durableTimeout' in config) {
+    if (typeof config.durableTimeout !== 'number' && typeof config.durableTimeout !== 'string') {
+      errors.push('`durableTimeout` is not a valid duration')
     }
-    if (config.durableTimeout > 31_536_000) {
-      errors.push('`config.durableTimeout` must be at most 31_536_000 (1 year) seconds')
+
+    const duration = typeof config.durableTimeout === 'string' ? parseDuration(config.durableTimeout, 's') : config.durableTimeout
+    if (typeof duration === 'number') {
+      if (duration < 60) {
+        errors.push('`config.durableTimeout` must be at least 60 seconds')
+      }
+
+      if (duration > 31_536_000) {
+        errors.push('`config.durableTimeout` must be at most 1 year')
+      }
     }
   }
 
@@ -102,7 +186,7 @@ export function durableEventHandler(handler: DurableHandler): DurableHandler & {
  * @param handler
  * @returns  The handler function, unmodified and the provided config object.
  */
-export function durableEventHandler<TConfig extends {name: string; durableTimeout?: number}>(
+export function durableEventHandler<TConfig extends {name: string; durableTimeout?: string | number}>(
   config: TConfig,
   handler: DurableHandler,
 ): DurableHandler & {config: TConfig}
@@ -115,7 +199,7 @@ export function durableEventHandler<TConfig extends {name: string; durableTimeou
  * @param maybeHandler
  * @returns The handler function, unmodified and the config object if provided
  */
-export function durableEventHandler<TConfig extends {name: string; durableTimeout?: number}>(
+export function durableEventHandler<TConfig extends {name: string; durableTimeout?: string | number}>(
   configOrHandler: TConfig | DurableHandler,
   maybeHandler?: DurableHandler,
 ): DurableHandler {

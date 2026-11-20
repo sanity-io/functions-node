@@ -68,6 +68,7 @@ export interface DurableStepAttemptContext extends DurableStepCallbackContext {
 /**
  * The signature of the duration object passed to `wait`, `waitForCondition` and `waitForCallback` methods. It is also used when specifying the `retry.delay` of durable steps.
  * It can be specified in days, hours, minutes, or seconds.
+ * @deprecated - use string notation instead `delay: 10 seconds` | `timeout: 1 min`
  * @beta Using durables is considered experimental and may change in the future.
  */
 export type DurableDuration =
@@ -81,14 +82,24 @@ export type DurableDuration =
  */
 export interface DurableRetryStrategy {
   maxAttempts?: number
-  // @todo: tie this to a string like "5s" or "1m" and normalize it to a duration object
-  delay?: DurableDuration
+  delay?: DurableDuration | string
 }
 
 /**
  * @beta Using durables is considered experimental and may change in the future.
  */
-export type DurableWaitForConditionDecision = {shouldRetry: true; delay: DurableDuration} | {shouldRetry: false}
+export type DurableWaitForConditionDecision =
+  | {
+      shouldRetry: true
+      /**
+       * Duration as a string of `<number> <unit>` pairs.
+       * @example '10 seconds'
+       * @example '1 days 2 hours'
+       * @example '1 days 2 hours 30 minutes 15 seconds'
+       */
+      delay: DurableDuration | string
+    }
+  | {shouldRetry: false}
 
 /**
  * @beta Using durables is considered experimental and may change in the future.
@@ -411,6 +422,19 @@ export type DurableOperations = {
   }: {
     name?: string
     submitter: DurableStepWaitForCallbackSubmitter
+    timeout?: string
+    retry?: DurableRetryStrategy
+  }): Promise<T>
+
+  /** @deprecated Use a duration string instead, e.g. `'30 seconds'`. */
+  waitForCallback<T>({
+    name,
+    submitter,
+    timeout,
+    retry,
+  }: {
+    name?: string
+    submitter: DurableStepWaitForCallbackSubmitter
     timeout?: DurableDuration
     retry?: DurableRetryStrategy
   }): Promise<T>
@@ -420,16 +444,19 @@ export type DurableOperations = {
    * @example
    * Wait for 30 seconds
    * ```ts
-   * await step.wait({name: 'wait30Sec', duration: { seconds: 30 }});
+   * await step.wait({name: 'wait30Sec', duration: '30 seconds'});
    * ```
    * Wait for 2 days and 3 hours
    * ```ts
-   * await step.wait({name: 'waitALongTime', duration: { days: 2, hours: 3 }});
+   * await step.wait({name: 'waitALongTime', duration: '2 days 3 hours'});
    * ```
    * @param name - Step name
    * @param duration - Amount of time the function will wait before continuing.
+   * Duration is a string of `<number> <unit>` pairs. Must be at least '1 second'
    * @returns Resolves after the duration
    */
+  wait({name, duration}: {name?: string; duration: string}): Promise<void>
+  /** @deprecated Use a duration string instead, e.g. `'30 seconds'`. */
   wait({name, duration}: {name?: string; duration: DurableDuration}): Promise<void>
 
   /**
@@ -455,9 +482,7 @@ export type DurableOperations = {
    *     if (state.article) return {shouldRetry: false}
    *       return {
    *         shouldRetry: true,
-   *         delay: {
-   *           seconds: Math.min(attempt * 2, 60),
-   *         },
+   *         delay: '10 seconds',
    *       }
    *     },
    *   },

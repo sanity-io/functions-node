@@ -37,30 +37,41 @@ jobs:
       - name: Verify packaged ESM and NodeNext declarations
         shell: bash
         run: |
+          REPO_DIR="$PWD"
           TARBALL="$(npm pack --json | node -e 'let input = ""; process.stdin.on("data", chunk => input += chunk); process.stdin.on("end", () => console.log(JSON.parse(input)[0].filename))')"
           TEMP_DIR="$(mktemp -d)"
-          tar -xzf "$TARBALL" -C "$TEMP_DIR"
+          CONSUMER_DIR="$TEMP_DIR/consumer"
 
-          # Catches extensionless imports in emitted JavaScript.
-          node --input-type=module --eval 'await import(process.argv[1])' \
-            "$TEMP_DIR/package/dist/index.js"
+          mkdir "$CONSUMER_DIR"
+          cd "$CONSUMER_DIR"
+          npm init --yes
+          npm install --ignore-scripts "$REPO_DIR/$TARBALL"
 
-          # Catches extensionless imports preserved in emitted .d.ts files.
-          mkdir "$TEMP_DIR/consumer"
+          # Checks the package's public ESM entry point and all runtime dependencies.
+          node --input-type=module --eval "await import('@sanity/functions')"
+
+          # Checks that public declarations resolve for a NodeNext consumer.
           node -e "
             const fs = require('fs');
-            const dir = process.argv[1];
-            fs.writeFileSync(dir + '/index.ts', [
-              \"import type { DurableHandler, SyncTagInvalidateEventHandler } from '../package/dist/index.js'\",
+            fs.writeFileSync('index.ts', [
+              \"import type { DurableHandler, SyncTagInvalidateEventHandler } from '@sanity/functions'\",
               'export type PublicApiCheck = { durable: DurableHandler; syncTagInvalidate: SyncTagInvalidateEventHandler }',
-            ].join('\\n'));
-            fs.writeFileSync(dir + '/tsconfig.json', JSON.stringify({
-              compilerOptions: { module: 'NodeNext', moduleResolution: 'NodeNext', target: 'ES2024', strict: true, skipLibCheck: false, noEmit: true },
-              files: ['index.ts']
-            }, null, 2));
-          " "$TEMP_DIR/consumer"
+            ].join('\n'));
 
-          ./node_modules/.bin/tsc --project "$TEMP_DIR/consumer/tsconfig.json"
+            fs.writeFileSync('tsconfig.json', JSON.stringify({
+              compilerOptions: {
+                module: 'NodeNext',
+                moduleResolution: 'NodeNext',
+                target: 'ES2024',
+                strict: true,
+                skipLibCheck: false,
+                noEmit: true,
+              },
+              files: ['index.ts'],
+            }, null, 2));
+          "
+
+          "$REPO_DIR/node_modules/.bin/tsc" --project tsconfig.json
       - uses: actions/upload-artifact@v7
         name: Cache build output
         with:
