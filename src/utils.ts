@@ -56,7 +56,7 @@ export const normalizeDelay = (delay: string | Partial<DurableDuration> | number
   // converts everything to 'ms'
   let duration = typeof delay === 'number' ? delay * 1000 : parseDuration(delay, 'ms')
   // Catch anything that isn't a whole number
-  if (!Number.isFinite(duration) && duration % 1000 !== 0) {
+  if (!Number.isFinite(duration) || duration % 1000 !== 0) {
     throw new Error('Duration must be a whole number greater then or equal to 1 second')
   }
 
