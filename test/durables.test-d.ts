@@ -208,10 +208,19 @@ describe('DurableOperations.wait', () => {
     expectTypeOf(result).toEqualTypeOf<Promise<void>>()
   })
 
-  test('rejects unsupported calls', () => {
-    // @ts-expect-error numeric durations are unsupported
-    step.wait({name: 'delay', duration: 30})
+  test('accepts a number duration and resolves void', () => {
+    const result = step.wait({name: 'delay', duration: 30})
 
+    expectTypeOf(result).toEqualTypeOf<Promise<void>>()
+  })
+
+  test('accepts a DurableDuration object and resolves void', () => {
+    const result = step.wait({name: 'delay', duration: {seconds: 5}})
+
+    expectTypeOf(result).toEqualTypeOf<Promise<void>>()
+  })
+
+  test('rejects unsupported calls', () => {
     // @ts-expect-error durations are required
     step.wait({name: 'delay', duration: {}})
   })

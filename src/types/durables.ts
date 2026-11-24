@@ -66,9 +66,14 @@ export interface DurableStepAttemptContext extends DurableStepCallbackContext {
 }
 
 /**
+ * Using number assumes seconds, string would be an explicit value that could be parsed, the duration obj an explicit value that requires no normalizing
+ * @beta: Using durables is considered experimental and may change in the future.
+ */
+export type DurableDurationInput = number | string | DurableDuration
+
+/**
  * The signature of the duration object passed to `wait`, `waitForCondition` and `waitForCallback` methods. It is also used when specifying the `retry.delay` of durable steps.
  * It can be specified in days, hours, minutes, or seconds.
- * @deprecated - use string notation instead `delay: 10 seconds` | `timeout: 1 min`
  * @beta Using durables is considered experimental and may change in the future.
  */
 export type DurableDuration =
@@ -82,7 +87,7 @@ export type DurableDuration =
  */
 export interface DurableRetryStrategy {
   maxAttempts?: number
-  delay?: DurableDuration | string
+  delay?: DurableDurationInput
 }
 
 /**
@@ -92,12 +97,16 @@ export type DurableWaitForConditionDecision =
   | {
       shouldRetry: true
       /**
-       * Duration as a string of `<number> <unit>` pairs.
+       * Either a number representing seconds
+       * a string of `<number> <unit>` pairs.
+       * or the DurableDuration object with seconds being required
+       * @example 10
        * @example '10 seconds'
        * @example '1 days 2 hours'
        * @example '1 days 2 hours 30 minutes 15 seconds'
+       * @example `{ seconds: 15, days: 1 }`
        */
-      delay: DurableDuration | string
+      delay: DurableDurationInput
     }
   | {shouldRetry: false}
 
@@ -422,20 +431,7 @@ export type DurableOperations = {
   }: {
     name?: string
     submitter: DurableStepWaitForCallbackSubmitter
-    timeout?: string
-    retry?: DurableRetryStrategy
-  }): Promise<T>
-
-  /** @deprecated Use a duration string instead, e.g. `'30 seconds'`. */
-  waitForCallback<T>({
-    name,
-    submitter,
-    timeout,
-    retry,
-  }: {
-    name?: string
-    submitter: DurableStepWaitForCallbackSubmitter
-    timeout?: DurableDuration
+    timeout?: DurableDurationInput
     retry?: DurableRetryStrategy
   }): Promise<T>
 
@@ -455,9 +451,7 @@ export type DurableOperations = {
    * Duration is a string of `<number> <unit>` pairs. Must be at least '1 second'
    * @returns Resolves after the duration
    */
-  wait({name, duration}: {name?: string; duration: string}): Promise<void>
-  /** @deprecated Use a duration string instead, e.g. `'30 seconds'`. */
-  wait({name, duration}: {name?: string; duration: DurableDuration}): Promise<void>
+  wait({name, duration}: {name?: string; duration: DurableDurationInput}): Promise<void>
 
   /**
    * Waits for a specified condition to be met by executing a `poller` method to retrieve state and then inspecting the retrieved state in a `next` method to determine whether to retry and after what delay to do so.
