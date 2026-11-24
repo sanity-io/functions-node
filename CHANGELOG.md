@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.12.0](https://github.com/sanity-io/functions-node/compare/v1.11.1...v1.12.0) (2026-11-24)
+
+
+### Features
+
+* **durables:** add small wrapper for parse-duration and normalizer for delays ([#80](https://github.com/sanity-io/functions-node/issues/80)) ([60a2bed](https://github.com/sanity-io/functions-node/commit/60a2bedf8da5740d3c4f97954923612b1bf55dba))
+
 ## [1.11.1](https://github.com/sanity-io/functions-node/compare/v1.11.0...v1.11.1) (2026-11-19)
 
 
